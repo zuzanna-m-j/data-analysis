@@ -434,10 +434,10 @@ with open("info.data", 'w') as f:
 
 input_file = f"""Dim {DIM}
 
-max_steps 50001
-log_freq 1000
-binary_freq 1000
-traj_freq 10000
+max_steps 2000001
+log_freq 5000
+binary_freq 20000
+traj_freq 500000
 pmeorder 1
 
 charges {55:7f} {0.5}
@@ -527,6 +527,8 @@ Polymer number {n_pol}
 Solvent: {n_sol}
 Salt: {n_salt}
 Counter ions: {n_ci}
+
+Salt to water: {n_salt/n_sol}
 
 
 Number density: {(n_pol * N + n_sol + n_ci + n_salt)/box_vol}

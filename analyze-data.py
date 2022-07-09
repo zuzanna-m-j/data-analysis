@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from ast import arg
 import glob
 import os
 from ssl import ALERT_DESCRIPTION_BAD_CERTIFICATE_HASH_VALUE
@@ -22,6 +23,8 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--chi', default = "chips")
 parser.add_argument('--dim', default = 3, type=int)
+
+
 args = parser.parse_args()
 
 if args.chi == "chips":
@@ -37,6 +40,7 @@ colors2 = ['orangered','teal', 'dodgerblue', 'gold', 'forestgreen', 'darkred', '
 #rootdir = '/home/jello/results/AB-block-21-Jun-2022/non-polar'
 
 rootdir = os.getcwd()
+polarity = os.path.basename(rootdir)
 dirs = glob.glob(f'{rootdir}/[!_]*/')
 dirs.sort()
 
@@ -53,11 +57,15 @@ CHI_PS = []
 HIST_DATA = []
 CLUST_SIZE = []
 RHO_THR = []
-DENS_PROF = [] #average column-wise
+DENS_PROF = [] 
+ION_DENS_PROF = [] 
 
 i_AC_rich = []
 i_B_rich = []
 i_solv = []
+
+fig_anim, ax_anim = plt.subplots(1,2)
+camera = Camera(fig_anim)
        
 with open(f"{rootdir}/summary.txt", "w") as f:
     f.writelines("chi_PS rho_p_rich rho_p_poor rho_ion_rich rho_ion_poor\n")
@@ -97,6 +105,7 @@ for dir in dirs:
 
     yslices = list(set(f[:,1]))
     yslices.sort()
+    yslices = np.array(yslices)
 
     if dim == 2:
 
@@ -131,8 +140,8 @@ for dir in dirs:
 
         data = [xdata,ydata,zdata,rhoA,rhoB,rhoC,rhoW,rhoCAT,rhoANI,rhoCI]
 
-    fig, ax = plt.subplots(1,4)
-    camera = Camera(fig)
+    # fig, ax = plt.subplots(1,4)
+    # camera = Camera(fig)
 
     ydata = []
     zdata = []
@@ -204,13 +213,18 @@ for dir in dirs:
         ABC_dens = np.mean(ABC_dens, axis = 0)
         DENS_PROF.append(ABC_dens)
 
+        Ion_dens = rhoIondata.reshape(len(xslices),-1)
+        Ion_dens = np.mean(Ion_dens, axis = 0)
+        ION_DENS_PROF.append(Ion_dens)
+
+
         IoninAC = []
         IoninB = []
         IoninSol = []   
 
         AC_thr = []
         for i in range(len(rhoACdata)):
-            if abs(rhoACdata[i] - meanAC) < stdAC:
+            if rhoACdata[i] < 0.15:
                 AC_thr.append(0)
             else:
                 AC_thr.append(1)
@@ -218,11 +232,12 @@ for dir in dirs:
 
         B_thr = []
         for i in range(len(rhoBdata)):
-            if abs(rhoBdata[i] - meanB) < stdB:
+            if rhoBdata[i] < 0.15:
                 B_thr.append(0)
             else:
                 B_thr.append(1)
         B_thr = np.array(B_thr)
+        
 
         footprint = square(12)
         xdim, ydim = (AC_thr.reshape(len(xslices),-1)).shape #rows - x, cols - y
@@ -243,80 +258,84 @@ for dir in dirs:
         # dens_cl = dens_cl.reshape(-1,len(xslices))
         # dens_cr = dens_cr.reshape(-1,len(xslices))
 
-        ax[0].imshow(rhoACdata.reshape(len(xslices),-1).T, cmap = "Greens")
-        # ax[0].set_xlim(0,xdim)
-        # ax[0].set_ylim(0,ydim)
-        ax[0].set_title(r"Cluster")
-        ax[0].text(ydim + 1, 0.0, f"X: {xslice}")
-        ax[0].set_xlabel('Y')
-        ax[0].set_ylabel('Z')
+        ax_anim[0].imshow(rhoACdata.reshape(len(xslices),-1).T, cmap = "Reds")
+        ax_anim[0].set_xlim(0,xdim)
+        ax_anim[0].set_ylim(0,ydim)
+        ax_anim[0].text(200, 0.0, f"{chi_name}: {chi_ps}")
+        ax_anim[0].set_xlabel('X')
+        ax_anim[0].set_ylabel('Y')
+        ax_anim[0].set_title("Polymer density")
+
+        ax_anim[1].imshow(AC_thr.reshape(len(xslices),-1).T, cmap = "coolwarm")
+        ax_anim[1].set_xlim(0,xdim)
+        ax_anim[1].set_ylim(0,ydim)
+        ax_anim[1].set_xlabel('X')
+        ax_anim[1].set_ylabel('Y')
+        ax_anim[1].set_title("Threshold")
+
+        fig_anim.suptitle(f"Polymer density ({polarity})")
+        camera.snap()
+
+        fig, ax = plt.subplots(1,2)
+        im0 = ax[0].imshow(rhoACdata.reshape(len(xslices),-1).T, cmap = "Reds")
+        ax[0].set_xlim(0,xdim)
+        ax[0].set_ylim(0,ydim)
+        ax[0].text(200, 0.0, f"{chi_name}: {chi_ps}")
+        ax[0].set_xlabel('X')
+        ax[0].set_ylabel('Y')
+        ax[0].set_title("Polymer density")
+        fig.colorbar(im0, ax=ax[0])
+
+        im1 = ax[1].imshow(AC_thr.reshape(len(xslices),-1).T, cmap = "coolwarm")
+        ax[1].set_xlim(0,xdim)
+        ax[1].set_ylim(0,ydim)
+        ax[1].set_xlabel('X')
+        ax[1].set_ylabel('Y')
+        ax[1].set_title("Threshold")
+        fig.colorbar(im1, ax=ax[1])
 
 
-        ax[1].imshow(rhoBdata.reshape(len(xslices),-1).T, cmap = "Greens")
-        # ax[1].set_xlim(0,ydim)
-        # ax[1].set_ylim(0,zdim)
-        # ax[1].set_title(r"Corona")
-        # #ax[1].text(ydim + 1, 0.0, f"X: {xslice}")
-        # # ax[1].set_xlabel('Y')
-        # # ax[1].set_ylabel('Z')
+        fig.suptitle(f"Polymer density ({polarity})")
+        fig.savefig(f"Polymer_density_{chi_ps}.png",dpi = 300)
 
-        
-        ax[2].imshow(imgAC.T, cmap = "coolwarm")
-        # ax[2].set_xlim(0,ydim)
-        # ax[2].set_ylim(0,zdim)
-        # ax[2].set_title(r"Corr. cluster")
-        # #ax[2].text(ydim + 1, 0.0, f"X: {xslice}")
-        # # ax[2].set_xlabel('Y')
-        # # ax[2].set_ylabel('Z')
-
-        ax[3].imshow(imgB.T, cmap = "coolwarm")
-        # ax[3].set_xlim(0,ydim)
-        # ax[3].set_ylim(0,zdim)
-        # ax[3].set_title(r"Corr. corona")
-
-        plt.show()
 
             # corona = ((dilation(img,square(7))).astype(int) - img.astype(int)).astype(bool)
             # corona_flat = ((dilation(img,square(7))).astype(int) - img.astype(int)).ravel()
 
-        Ion_thr = []
+        # Ion_thr = []
 
-        for i in range(len(rhoIondata)):
-            if abs(rhoIondata[i] - meanIon) < stdIon:
-                Ion_thr.append(0)
-            else:
-                Ion_thr.append(1)
-        Ion_thr = np.array(Ion_thr)
+        # for i in range(len(rhoIondata)):
+        #     if abs(rhoIondata[i] - meanIon) < stdIon:
+        #         Ion_thr.append(0)
+        #     else:
+        #         Ion_thr.append(1)
+        # Ion_thr = np.array(Ion_thr)
 
-        _p_AC_rich = []
-        _p_B_rich = []
-        _p_solv = []
+        # _p_AC_rich = []
+        # _p_B_rich = []
+        # _p_solv = []
 
-        _i_AC_rich = []
-        _i_B_rich = []
-        _i_solv = []
-
-        thr = np.argwhere(AC_thr == 1)
-
-        for r1,r2 in zip(rhoACdata[thr],rhoIondata[thr]):
-            _p_AC_rich.append(r1)
-            _i_AC_rich.append(r2)
-
-        thr = np.argwhere(B_thr == 1)
-
-        for r1,r2 in zip(rhoACdata[thr],rhoIondata[thr]):
-            _p_B_rich.append(r1)
-            _i_B_rich.append(r2)
+        # _i_AC_rich = []
+        # _i_B_rich = []
+        # _i_solv = []
 
 
-        thr = np.argwhere((AC_thr + B_thr)== 0)
-        for r1,r2 in zip(rhoACdata[thr],rhoIondata[thr]):
-            _p_solv.append(r1)
-            _i_solv.append(r2)
 
-        i_AC_rich.append(np.average(_i_AC_rich))
-        i_B_rich.append(np.average(_i_B_rich))
-        i_solv.append(np.average(_i_solv))
+        # thr = np.argwhere(B_thr == 1)
+
+        # for r1,r2 in zip(rhoACdata[thr],rhoIondata[thr]):
+        #     _p_B_rich.append(r1)
+        #     _i_B_rich.append(r2)
+
+
+        # thr = np.argwhere((AC_thr + B_thr)== 0)
+        # for r1,r2 in zip(rhoACdata[thr],rhoIondata[thr]):
+        #     _p_solv.append(r1)
+        #     _i_solv.append(r2)
+
+        # i_AC_rich.append(np.average(_i_AC_rich))
+        # i_B_rich.append(np.average(_i_B_rich))
+        # i_solv.append(np.average(_i_solv))
 
 
     elif dim == 3:
@@ -1008,12 +1027,54 @@ if dim == 2:
     # plt.tight_layout()
     # plt.show()
 
+
+    # process data
+
+    res = camera.animate(interval = 500)
+    res.save(f'density_profile_{polarity}.gif', dpi = 300)
+
+    CL_POL_DENS = []
+    CL_ION_DENS = []
+
+    SOL_POL_DENS = []
+    SOL_ION_DENS = []
+
+    ordinate = np.mean(yslices.reshape(-1, 11), axis=1)
     fig, ax = plt.subplots()
-    plt.suptitle("Density distribution")
+    plt.suptitle(f"Polymer Density Profile ({polarity})")
     for i in range(len(DENS_PROF)):
-        ax.plot(yslices[::50],DENS_PROF[i][::50],label = CHI_PS[i])
+
+        vals = np.mean(DENS_PROF[i].reshape(-1, 11), axis=1)
+        ivals = np.mean(ION_DENS_PROF[i].reshape(-1, 11), axis=1)
+        thr = np.argwhere(vals > 0.15)
+
+        CL_POL_DENS.append(np.average(vals[thr]))
+        CL_ION_DENS.append(np.mean(ivals[thr]))
+
+        SOL_POL_DENS.append(np.average(vals[~thr]))
+        SOL_ION_DENS.append(np.mean(ivals[~thr]))
+
+        ax.plot(ordinate,vals,label = CHI_PS[i])
     ax.legend(loc = 'best')
-    ax.set_ylabel(r"C^{*}")
-    ax.set_xlabel("Y")
+    ax.set_ylabel(r"$C^{*}$")
+    ax.set_xlabel("y")
     plt.tight_layout()
-    plt.show()
+    fig.savefig(f"Polymer_Density_Profile_{polarity}.png", dpi = 300)
+
+    fig, ax = plt.subplots()
+    plt.suptitle(f"Polymer Density - {polarity}")
+    ax.set_ylabel(f"{chi_name}")
+    ax.set_xlabel(r"$<C^{*}>$")
+    ax.plot(CL_POL_DENS,CHI_PS, color = "tab:green", linestyle = 'dotted', marker = 'o', label = 'slab')
+    ax.plot(SOL_POL_DENS,CHI_PS, color = "tab:blue", linestyle = 'dotted', marker = 'o', label = 'solvent')
+    ax.legend(loc = 'best')
+    fig.savefig(f"Pol_Density_Clust_{polarity}.png", dpi = 300)
+
+    fig, ax = plt.subplots()
+    plt.suptitle(f"Ion density - {polarity}")
+    ax.set_ylabel(f"{chi_name}")
+    ax.set_xlabel(r"$<\rho_{ion}>$")
+    ax.plot(CL_ION_DENS,CHI_PS, color = 'tab:green', linestyle = 'dotted', marker = 'o', label = 'slab')
+    ax.plot(SOL_ION_DENS,CHI_PS, color = 'tab:blue', linestyle = 'dotted', marker = 'o', label = 'solvent')
+    ax.legend(loc = 'best')
+    fig.savefig(f"Ion_Density_Clust_{polarity}.png", dpi = 300)
