@@ -1,0 +1,66 @@
+
+            # else:
+
+            #     for region in regions:
+            #         coords = region.coords
+            #         for rid, p_region in enumerate(rho1_clusters):
+            #             # connectivity check
+            #             overlap = 0
+            #             for coord in coords:
+            #                 if int(x - 1) ==  p_region[-1][0] and coord[0] in p_region[-1][1][:,0] and coord[1] in p_region[-1][1][:,1]:
+            #                     overlap += 1
+            #                     break
+            #             if overlap > 0:
+            #                 break
+
+            #         if overlap > 0:
+            #             rho1_clusters[rid].append([x, region.coords])
+            #         else:
+            #             rho1_clusters.append([[x,region.coords]])
+
+
+                # neighbours = []
+                # for orid,region in enumerate(regions):
+                #     neighs = []
+                #     coords = region.coords
+                #     for rid, p_region in enumerate(rho1_clusters):
+                #         if orid != rid:
+                #             for coord in coords:
+                #                 dy  = abs(coord[0] - p_region[-1][1][:,0])
+                #                 for i in range(len(dy)):
+                #                     if dy[i] >= int(ydim/2):
+                #                         dy[i] == ydim - dy[i]
+                #                     dy = np.min(dy)
+                #                 dz  = abs(coord[1] - p_region[-1][1][:,1])
+                #                 for i in range(len(dz)):
+                #                     if dz[i] >= int(zdim/2):
+                #                         dz[i] == zdim - dz[i]
+                #                     dz = np.min(dz)
+                #                 r  = np.sqrt(dy**2 + dz**2)
+                #                 if r <= 1000:
+                #                     neighs.append(rid)
+                #     neighbours.append(neighs)
+
+                # FLAGGED = []
+                # subclusters = []
+                # for i in range(len(neighbours)):
+                #     if i not in FLAGGED:
+                #         FLAGGED.append(i)
+                #         sub = copy.deepcopy(neighbours[i]) + [i]
+                #         for j in range(len(neighbours)):
+                #             if i != j:
+                #                 for n in neighbours[j]:
+                #                     if i == n:
+                #                         sub += copy.deepcopy(neighbours[j])
+                #                         for n2 in neighbours[j]:
+                #                             FLAGGED.append(n2)
+                #     print(sub)
+                #     subclusters.append(list(set(sub)))
+
+                # for subcluster in subclusters:
+                #     cluster_coords = []
+                #     for i in subcluster:
+                #         coords = rho1_clusters_[i]
+                #         for coord in coords:
+                #             cluster_coords.append(coord)
+                #     rho1_clusters.append([[x,np.array(cluster_coords)]])
