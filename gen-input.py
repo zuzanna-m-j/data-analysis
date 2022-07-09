@@ -31,7 +31,6 @@ import argparse
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--wlc', default = False, type = bool)
-parser.add_argument('--flat', default = False, type = bool)
 parser.add_argument('--small', default = False, type = bool)
 parser.add_argument('--polar',default = False, type = bool)
 parser.add_argument('--midpush',default = False, type = bool)
@@ -59,7 +58,6 @@ parser.add_argument('--dim', default = 3, type = int)
 args = parser.parse_args()
 
 POLAR = args.polar
-FLAT = args.flat
 WLC = args.wlc
 DIM = args.dim
 MIDPUSH = args.midpush
@@ -89,14 +87,14 @@ seq = N_a * "A" + N_b * "B" + N_c * "C"
 
 box_dim = [lx, ly, lz]
 
-if FLAT == True:
+if DIM == 2:
     box_vol = lx * ly
 else:
     box_vol = lx * ly * lz
 
 
 rho0 = 3.0
-phi = 0.40 #0.045
+phi = 0.1 #0.045
 kappaN = 5 * 50
 kappa = kappaN/N
 
@@ -219,27 +217,32 @@ for m_num in range(n_pol):
 
             if chain_pos == 0:
                 for xyz in range(3):
-                    if SMALL == True:
-                        if xyz == 1:
-                            coord = np.random.uniform((2/5) * box_dim[xyz], (3/5) * box_dim[xyz])
-                        else:
-                            coord = np.random.uniform(0,box_dim[xyz])
-                        props.append(coord)
+                    if SMALL == True and DIM == 2 and xyz == 1:
+                        coord = np.random.uniform((1.5/5) * box_dim[xyz], (3.5/5) * box_dim[xyz])
+                    elif SMALL == True and DIM == 3 and xyz == 2:
+                        coord = np.random.uniform((1.5/5) * box_dim[xyz], (3.5/5) * box_dim[xyz])
                     else:
                         coord = np.random.uniform(0,box_dim[xyz])
-                        props.append(coord)
-                if FLAT == True:
+
+                    props.append(coord)
+
+                if DIM == 2:
                     props[-1] = 0.0
+
             else:
+
                 theta = random.uniform(-np.pi, np.pi)
                 phi = random.uniform(- 2 * np.pi, 2 * np.pi)
                 x = 1.0 * np.cos(phi)*np.sin(theta) + properties[-1][4]
                 y = 1.0 * np.sin(phi)*np.sin(theta) + properties[-1][5]
-                if SMALL == True:
-                    while (2/5) * box_dim[1] > y > (3/5) * box_dim[1]:
-                        y = 1.0 * np.sin(phi)*np.sin(theta) + properties[-1][5]
                 z = 1.0 * np.cos(theta) + properties[-1][6]
-                if FLAT == True:
+                if SMALL == True and DIM == 2:
+                    while (1.5/5) * box_dim[1] > y > (3.5/5) * box_dim[1]:
+                        y = 1.0 * np.sin(phi)*np.sin(theta) + properties[-1][5]
+                elif SMALL == True and DIM == 3:
+                    while (1.5/5) * box_dim[2] > z > (3.5/5) * box_dim[2]:
+                        z = 1.0 * np.sin(phi)*np.sin(theta) + properties[-1][5]
+                if DIM == 2:
                     z = 0.0
                 
                 props.append(x)
@@ -264,11 +267,11 @@ for m_num in range(n_pol):
 
             # add the drude oscilator
 
-            dx = properties[-1][4]
-            dy = properties[-1][5]
-            dz = properties[-1][6]
+            x = properties[-1][4]
+            y = properties[-1][5]
+            z = properties[-1][6]
 
-            props = [atom_count,mol_count,D[0],drude_charge,dx,dy,dz]
+            props = [atom_count,mol_count,D[0],drude_charge,x,y,z]
             properties.append(copy.deepcopy(props))
             atom_count += 1
 
@@ -276,29 +279,36 @@ for m_num in range(n_pol):
             atom_charge = qm
             props.append(atom_charge)
 
+
+
             if chain_pos == 0:
                 for xyz in range(3):
-                    if SMALL == True:
-                        if xyz == 1:
-                            coord = np.random.uniform((2/5) * box_dim[xyz], (3/5) * box_dim[xyz])
-                        else:
-                            coord = np.random.uniform(0,box_dim[xyz])
-                        props.append(coord)
+                    if SMALL == True and DIM == 2 and xyz == 1:
+                        coord = np.random.uniform((1.5/5) * box_dim[xyz], (3.5/5) * box_dim[xyz])
+                    elif SMALL == True and DIM == 3 and xyz == 2:
+                        coord = np.random.uniform((1.5/5) * box_dim[xyz], (3.5/5) * box_dim[xyz])
                     else:
                         coord = np.random.uniform(0,box_dim[xyz])
-                        props.append(coord)
-                if FLAT == True:
+                        
+                    props.append(coord)
+
+                if DIM == 2:
                     props[-1] = 0.0
+
             else:
+
                 theta = random.uniform(-np.pi, np.pi)
                 phi = random.uniform(- 2 * np.pi, 2 * np.pi)
                 x = 1.0 * np.cos(phi)*np.sin(theta) + properties[-1][4]
                 y = 1.0 * np.sin(phi)*np.sin(theta) + properties[-1][5]
-                if SMALL == True:
-                    while (2/5) * box_dim[1] > y > (3/5) * box_dim[1]:
-                        y = 1.0 * np.sin(phi)*np.sin(theta) + properties[-1][5]
                 z = 1.0 * np.cos(theta) + properties[-1][6]
-                if FLAT == True:
+                if SMALL == True and DIM == 2:
+                    while (1.5/5) * box_dim[1] > y > (3.5/5) * box_dim[1]:
+                        y = 1.0 * np.sin(phi)*np.sin(theta) + properties[-1][5]
+                elif SMALL == True and DIM == 3:
+                    while (1.5/5) * box_dim[2] > z > (3.5/5) * box_dim[2]:
+                        z = 1.0 * np.sin(phi)*np.sin(theta) + properties[-1][5]
+                if DIM == 2:
                     z = 0.0
                 
                 props.append(x)
@@ -328,6 +338,8 @@ for i in range(n_ci//2):
     for xyz in range(3):
         coord = np.random.uniform(0,1) * box_dim[xyz]
         props.append(coord)   
+    if DIM == 2:
+        props[-1] = 0.0
     properties.append(copy.deepcopy(props))
     atom_count += 1
     mol_count += 1
@@ -337,6 +349,8 @@ for i in range(n_ci//2):
     for xyz in range(3):
         coord = np.random.uniform(0,1) * box_dim[xyz]
         props.append(coord)     
+    if DIM == 2:
+        props[-1] = 0.0
     properties.append(copy.deepcopy(props))
     atom_count += 1
     mol_count += 1
@@ -356,6 +370,8 @@ if SALT != 0.0:
         for xyz in range(3):
             coord = np.random.uniform(0,1) * box_dim[xyz]
             props.append(coord)     
+        if DIM == 2:
+            props[-1] = 0.0
         properties.append(copy.deepcopy(props))
         atom_count += 1
         mol_count += 1
@@ -364,14 +380,18 @@ for _ in range(n_sol):
     props = [atom_count,mol_count,W[0], 1/2]
     for xyz in range(3):
         coord = np.random.uniform(0,1) * box_dim[xyz]
-        props.append(coord)     
+        props.append(coord)   
+    if DIM == 2:
+        props[-1] = 0.0  
     properties.append(copy.deepcopy(props))
 
     bonds.append([bond_count,3,atom_count,atom_count+1])
     bond_count += 1
     atom_count += 1
-    dx = properties[-1][4]
-    props = [atom_count,mol_count,D[0],-1/2,dx,dx,dx]
+    x = properties[-1][4]
+    y = properties[-1][5]
+    z = properties[-1][6]
+    props = [atom_count,mol_count,D[0],-1/2,x,y,z]
     properties.append(copy.deepcopy(props))
     atom_count += 1
     mol_count += 1
@@ -522,6 +542,19 @@ file_name = os.getcwd()
 
 descr = f"""File: {file_name}
 
+DIM: {DIM}
+BOX: {lx} {ly} {lz}
+N_GRID {Nx} {Ny} {Nz}
+
+Polarity: {POLAR}
+Salt ratio: {SALT}
+Midpush = {MIDPUSH}
+
+Chi_PS: {chi_ps}
+Chi_BS: {chi_bs}
+Chi_PI: {chi_pi}
+
+
 Polymer density: {N * n_pol/box_vol}
 Polymer number {n_pol}
 Solvent: {n_sol}
@@ -530,22 +563,11 @@ Counter ions: {n_ci}
 
 Salt to water: {n_salt/n_sol}
 
-
 Number density: {(n_pol * N + n_sol + n_ci + n_salt)/box_vol}
 Polymer volume fraction: {N * n_pol/(n_pol * N + n_sol + n_ci + n_salt)}
 
-Polarity: {POLAR}
-Salt ratio: {SALT}
-Flat: {FLAT}
-Midpush = {MIDPUSH}
+-------------------------------------------------------------------------
 
-Chi_PS: {chi_ps}
-Chi_BS: {chi_bs}
-Chi_PI: {chi_pi}
-
-BOX: {lx} {ly} {lz}
-N_GRID {Nx} {Ny} {Nz}
-DIM: {DIM}
 
 """
 with open("../../info.txt", 'a+') as f:
