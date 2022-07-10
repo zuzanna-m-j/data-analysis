@@ -30,29 +30,38 @@ import argparse
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--wlc', default = False, type = bool)
-parser.add_argument('--small', default = False, type = bool)
-parser.add_argument('--polar',default = False, type = bool)
-parser.add_argument('--midpush',default = False, type = bool)
+parser.add_argument('--wlc', action='store_true')
+parser.add_argument('--small', action='store_true')
+parser.add_argument('--polar', action='store_true')
+parser.add_argument('--skip_solv', action='store_true')
+parser.add_argument('--bmon', action='store_true')
 
 parser.add_argument('--salt', default = 0.0, type = float)
 parser.add_argument('--chips', default = 1.0, type = float)
 parser.add_argument('--chipi', default = 0.0, type = float)
 parser.add_argument('--chibs', default = 0.0, type = float)
+parser.add_argument('--phi', default = 0.1, type = float)
 
 parser.add_argument('--lx', default = 20.0, type = float)
 parser.add_argument('--ly', default = 20.0, type = float)
 parser.add_argument('--lz', default = 100.0, type = float)
 
-parser.add_argument('--zmin', default = 50, type = float)
-parser.add_argument('--zmax', default = 75, type = float)
+parser.add_argument('--cmin', default = 1/4, type = float)
+parser.add_argument('--cmax', default = 3/4, type = float)
+
 
 parser.add_argument('--Nx', default = 45, type = int)
 parser.add_argument('--Ny', default = 45, type = int)
 parser.add_argument('--Nz', default = 215, type = int)
 
-parser.add_argument('--scale', default = 1.0, type = float)
 parser.add_argument('--dim', default = 3, type = int)
+
+parser.add_argument('--max_steps', default = 2000001, type = int)
+parser.add_argument('--log_freq', default = 5000, type = int)
+parser.add_argument('--binary_freq', default = 20000, type = int)
+parser.add_argument('--traj_freq', default = 500000, type = int)
+
+parser.add_argument('--midpush', default= 0.0, type = float)
 
 
 args = parser.parse_args()
@@ -63,24 +72,30 @@ DIM = args.dim
 MIDPUSH = args.midpush
 SALT = args.salt
 SMALL = args.small
+SKIP_SOLV = args.skip_solv
+BMON = args.bmon
+
 
 chi_ps = args.chips
 chi_pi = args.chipi
 chi_bs = args.chibs
 
-lx = args.lx * args.scale
-ly = args.ly * args.scale
-lz = args.lz * args.scale
+lx = args.lx
+ly = args.ly
+lz = args.lz
 
-zmin = args.zmin
-zmax = args.zmax
+Nx = args.Nx
+Ny = args.Ny
+Nz = args.Nz
 
-Nx = int(args.Nx * args.scale)
-Ny = int(args.Ny * args.scale)
-Nz = int(args.Nz * args.scale)
+cmax = args.cmax
+cmin = args.cmin
 
 N_a = 25
-N_b = 0
+if BMON == True:
+    N_b = 25
+else:
+    N_b = 0
 N_c = 25
 N = N_a + N_b + N_c
 seq = N_a * "A" + N_b * "B" + N_c * "C"
@@ -94,7 +109,7 @@ else:
 
 
 rho0 = 3.0
-phi = 0.1 #0.045
+phi = args.phi #0.045
 kappaN = 5 * 50
 kappa = kappaN/N
 
@@ -218,9 +233,9 @@ for m_num in range(n_pol):
             if chain_pos == 0:
                 for xyz in range(3):
                     if SMALL == True and DIM == 2 and xyz == 1:
-                        coord = np.random.uniform((1.5/5) * box_dim[xyz], (3.5/5) * box_dim[xyz])
+                        coord = np.random.uniform(cmin * box_dim[xyz], cmax * box_dim[xyz])
                     elif SMALL == True and DIM == 3 and xyz == 2:
-                        coord = np.random.uniform((1.5/5) * box_dim[xyz], (3.5/5) * box_dim[xyz])
+                        coord = np.random.uniform(cmin * box_dim[xyz], cmax * box_dim[xyz])
                     else:
                         coord = np.random.uniform(0,box_dim[xyz])
 
@@ -237,10 +252,10 @@ for m_num in range(n_pol):
                 y = 1.0 * np.sin(phi)*np.sin(theta) + properties[-1][5]
                 z = 1.0 * np.cos(theta) + properties[-1][6]
                 if SMALL == True and DIM == 2:
-                    while (1.5/5) * box_dim[1] > y > (3.5/5) * box_dim[1]:
+                    while cmin * box_dim[1] > y > cmax * box_dim[1]:
                         y = 1.0 * np.sin(phi)*np.sin(theta) + properties[-1][5]
                 elif SMALL == True and DIM == 3:
-                    while (1.5/5) * box_dim[2] > z > (3.5/5) * box_dim[2]:
+                    while cmin * box_dim[2] > z > cmax * box_dim[2]:
                         z = 1.0 * np.sin(phi)*np.sin(theta) + properties[-1][5]
                 if DIM == 2:
                     z = 0.0
@@ -279,14 +294,12 @@ for m_num in range(n_pol):
             atom_charge = qm
             props.append(atom_charge)
 
-
-
             if chain_pos == 0:
                 for xyz in range(3):
                     if SMALL == True and DIM == 2 and xyz == 1:
-                        coord = np.random.uniform((1.5/5) * box_dim[xyz], (3.5/5) * box_dim[xyz])
+                        coord = np.random.uniform(cmin * box_dim[xyz], cmax * box_dim[xyz])
                     elif SMALL == True and DIM == 3 and xyz == 2:
-                        coord = np.random.uniform((1.5/5) * box_dim[xyz], (3.5/5) * box_dim[xyz])
+                        coord = np.random.uniform(cmin * box_dim[xyz], cmax * box_dim[xyz])
                     else:
                         coord = np.random.uniform(0,box_dim[xyz])
                         
@@ -303,10 +316,10 @@ for m_num in range(n_pol):
                 y = 1.0 * np.sin(phi)*np.sin(theta) + properties[-1][5]
                 z = 1.0 * np.cos(theta) + properties[-1][6]
                 if SMALL == True and DIM == 2:
-                    while (1.5/5) * box_dim[1] > y > (3.5/5) * box_dim[1]:
+                    while cmin * box_dim[1] > y > cmax * box_dim[1]:
                         y = 1.0 * np.sin(phi)*np.sin(theta) + properties[-1][5]
                 elif SMALL == True and DIM == 3:
-                    while (1.5/5) * box_dim[2] > z > (3.5/5) * box_dim[2]:
+                    while cmin * box_dim[2] > z > cmax * box_dim[2]:
                         z = 1.0 * np.sin(phi)*np.sin(theta) + properties[-1][5]
                 if DIM == 2:
                     z = 0.0
@@ -326,6 +339,7 @@ for m_num in range(n_pol):
     mol_angles.append(copy.deepcopy(mol_ang))
     mol_count += 1
 
+
 if POLAR == True:
     pol_atms = int(n_pol * (2 * N_a + 2 * N_c + N_b))
 else:
@@ -333,68 +347,115 @@ else:
 
 sol_atms = int(n_ci//2 + n_ci//2 + n_salt//2 + n_salt//2 + 2 * n_sol)
 
-for i in range(n_ci//2):
-    props = [atom_count,mol_count,CI[0], 1]
-    for xyz in range(3):
-        coord = np.random.uniform(0,1) * box_dim[xyz]
-        props.append(coord)   
-    if DIM == 2:
-        props[-1] = 0.0
-    properties.append(copy.deepcopy(props))
-    atom_count += 1
-    mol_count += 1
+p = [20,1,20]
 
-for i in range(n_ci//2):
-    props = [atom_count,mol_count,CI[0], -1]
-    for xyz in range(3):
-        coord = np.random.uniform(0,1) * box_dim[xyz]
-        props.append(coord)     
-    if DIM == 2:
-        props[-1] = 0.0
-    properties.append(copy.deepcopy(props))
-    atom_count += 1
-    mol_count += 1
+if SKIP_SOLV == False:
 
-if SALT != 0.0:
-    salt_charge = 0
-    for _ in range(int(n_salt//2)):
-        props = [atom_count,mol_count,CAT[0], CAT[1]]
+    for i in range(n_ci//2):
+        props = [atom_count,mol_count,CI[0], 1]
+
         for xyz in range(3):
-            coord = np.random.uniform(0,1) * box_dim[xyz]
-            props.append(coord)     
-        properties.append(copy.deepcopy(props))
-        atom_count += 1
-        mol_count += 1
-    for _ in range(int(n_salt//2)):
-        props = [atom_count,mol_count,ANI[0], ANI[1]]
-        for xyz in range(3):
-            coord = np.random.uniform(0,1) * box_dim[xyz]
-            props.append(coord)     
+            pick = [np.random.uniform(0, cmin * box_dim[xyz]), np.random.uniform(cmin * box_dim[xyz], cmax * box_dim[xyz]), np.random.uniform(cmax * box_dim[xyz], box_dim[xyz])]
+            if SMALL == True and DIM == 2 and xyz == 1:
+                coord = np.random.choice(pick, p=p)
+            elif SMALL == True and DIM == 3 and xyz == 2:
+                coord =  np.random.choice(pick, p=p)
+            else:
+                coord = np.random.uniform(0,box_dim[xyz])
+            props.append(coord)
         if DIM == 2:
             props[-1] = 0.0
+
+
         properties.append(copy.deepcopy(props))
         atom_count += 1
         mol_count += 1
 
-for _ in range(n_sol):
-    props = [atom_count,mol_count,W[0], 1/2]
-    for xyz in range(3):
-        coord = np.random.uniform(0,1) * box_dim[xyz]
-        props.append(coord)   
-    if DIM == 2:
-        props[-1] = 0.0  
-    properties.append(copy.deepcopy(props))
+    for i in range(n_ci//2):
+        props = [atom_count,mol_count,CI[0], -1]
 
-    bonds.append([bond_count,3,atom_count,atom_count+1])
-    bond_count += 1
-    atom_count += 1
-    x = properties[-1][4]
-    y = properties[-1][5]
-    z = properties[-1][6]
-    props = [atom_count,mol_count,D[0],-1/2,x,y,z]
-    properties.append(copy.deepcopy(props))
-    atom_count += 1
-    mol_count += 1
+        for xyz in range(3):
+            pick = [np.random.uniform(0, cmin * box_dim[xyz]), np.random.uniform(cmin * box_dim[xyz], cmax * box_dim[xyz]), np.random.uniform(cmax * box_dim[xyz], box_dim[xyz])]
+            if SMALL == True and DIM == 2 and xyz == 1:
+                coord = np.random.choice(pick, p=p)
+            elif SMALL == True and DIM == 3 and xyz == 2:
+                coord = np.random.choice(pick, p=p)
+            else:
+                coord = np.random.uniform(0,box_dim[xyz])
+            props.append(coord)
+        if DIM == 2:
+            props[-1] = 0.0
+
+        atom_count += 1
+        mol_count += 1
+
+    if SALT != 0.0:
+        salt_charge = 0
+        for _ in range(int(n_salt//2)):
+            props = [atom_count,mol_count,CAT[0], CAT[1]]    
+
+            for xyz in range(3):
+                pick = [np.random.uniform(0, cmin * box_dim[xyz]), np.random.uniform(cmin * box_dim[xyz], cmax * box_dim[xyz]), np.random.uniform(cmax * box_dim[xyz], box_dim[xyz])]
+                if SMALL == True and DIM == 2 and xyz == 1:
+                    coord = np.random.choice(pick, p=p)
+                elif SMALL == True and DIM == 3 and xyz == 2:
+                    coord = np.random.choice(pick, p=p)
+                else:
+                    coord = np.random.uniform(0,box_dim[xyz])
+                props.append(coord)
+            if DIM == 2:
+                props[-1] = 0.0
+
+            properties.append(copy.deepcopy(props))
+            atom_count += 1
+            mol_count += 1
+        for _ in range(int(n_salt//2)):
+            props = [atom_count,mol_count,ANI[0], ANI[1]]
+
+            for xyz in range(3):
+                pick = [np.random.uniform(0, cmin * box_dim[xyz]), np.random.uniform(cmin * box_dim[xyz], cmax * box_dim[xyz]), np.random.uniform(cmax * box_dim[xyz], box_dim[xyz])]
+                if SMALL == True and DIM == 2 and xyz == 1:
+                    coord = np.random.choice(pick, p=p)
+                elif SMALL == True and DIM == 3 and xyz == 2:
+                    coord = np.random.choice(pick, p=p)
+                else:
+                    coord = np.random.uniform(0,box_dim[xyz])
+                props.append(coord)
+            if DIM == 2:
+                props[-1] = 0.0
+
+            properties.append(copy.deepcopy(props))
+            atom_count += 1
+            mol_count += 1
+
+    for _ in range(n_sol):
+        props = [atom_count,mol_count,W[0], 1/2]
+
+        for xyz in range(3):
+            pick = [np.random.uniform(0, cmin * box_dim[xyz]), np.random.uniform(cmin * box_dim[xyz], cmax * box_dim[xyz]), np.random.uniform(cmax * box_dim[xyz], box_dim[xyz])]
+            if SMALL == True and DIM == 2 and xyz == 1:
+                coord = np.random.choice(pick, p=p)
+            elif SMALL == True and DIM == 3 and xyz == 2:
+                coord = np.random.choice(pick, p=p)
+            else:
+                coord = np.random.uniform(0,box_dim[xyz])
+            props.append(coord)
+        if DIM == 2:
+            props[-1] = 0.0
+
+        properties.append(copy.deepcopy(props))
+
+        bonds.append([bond_count,3,atom_count,atom_count+1])
+        bond_count += 1
+        atom_count += 1
+        x = properties[-1][4]
+        y = properties[-1][5]
+        z = properties[-1][6]
+        props = [atom_count,mol_count,D[0],-1/2,x,y,z]
+        properties.append(copy.deepcopy(props))
+        atom_count += 1
+        mol_count += 1
+
 
 if WLC == True:
     #process angles
@@ -448,16 +509,23 @@ with open('tail.data', 'w') as fout:
         for line in angles:
             fout.writelines(f"{line[0]} {line[1]}  {line[2]} {line[3]} {line[4]}\n")
 
+if SKIP_SOLV == True:
+    is_solv = 'no'
+else:
+    is_solv = 'yes'
+
 with open("info.data", 'w') as f: 
     f.writelines(f"n_atoms: {atom_count - 1}\n")
-    f.writelines(f"pol_atoms: {pol_atms}")
+    f.writelines(f"pol_atoms: {pol_atms}\n")
+    f.writelines(f"is_solv: {is_solv}")
+
 
 input_file = f"""Dim {DIM}
 
-max_steps 2000001
-log_freq 5000
-binary_freq 20000
-traj_freq 500000
+max_steps {args.max_steps}
+log_freq {args.log_freq}
+binary_freq {args.binary_freq}
+traj_freq {args.traj_freq}
 pmeorder 1
 
 charges {55:7f} {0.5}
@@ -477,11 +545,21 @@ bond 3 harmonic {2.5:7f} {0.0:7f}
 
 """
 
-if MIDPUSH == True:
+if MIDPUSH != 0.0 and BMON == True:
+    input_file += f"""group polya type 1
+group polyb type 2
+group polyc type 3
+extraforce polya midpush {MIDPUSH}
+extraforce polyb midpush {MIDPUSH}
+extraforce polyc midpush {MIDPUSH}
+
+"""
+
+elif MIDPUSH != 0.0 and BMON == False:
     input_file += f"""group polya type 1
 group polyc type 3
-extraforce polya midpush 0.1
-extraforce polyc midpush 0.1
+extraforce polya midpush {MIDPUSH}
+extraforce polyc midpush {MIDPUSH}
 
 """
 
@@ -553,6 +631,9 @@ Midpush = {MIDPUSH}
 Chi_PS: {chi_ps}
 Chi_BS: {chi_bs}
 Chi_PI: {chi_pi}
+Phi: {args.phi}
+
+BMON: {BMON}
 
 
 Polymer density: {N * n_pol/box_vol}

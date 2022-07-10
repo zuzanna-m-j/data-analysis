@@ -39,6 +39,9 @@ n_atoms = int(n_atoms[1])
 n_pol = info_lines[1].strip().split()
 n_pol = int(n_pol[1])
 
+is_solv = info_lines[2].strip().split()
+is_solv = is_solv[1]
+
 
 with open(file="tail.data",mode='r') as f:
     tail = f.readlines()
@@ -52,10 +55,18 @@ with open(file=file_name,mode='w') as fout:
     fout.writelines('Atoms\n')
     fout.writelines('\n')
 
-    for atom in atom_lines[-n_atoms:-n_atoms + n_pol]:
-        line = atom.split()
-        if len(line) == 7:
-            fout.writelines(f"{line[0]} {line[2]} {line[1]}  {line[6]}  {line[3]}  {line[4]}  {line[5]}\n")
+    if is_solv == 'no':
+
+        for atom in atom_lines[-n_atoms:]:
+            line = atom.split()
+            if len(line) == 7:
+                fout.writelines(f"{line[0]} {line[2]} {line[1]}  {line[6]}  {line[3]}  {line[4]}  {line[5]}\n")
+
+    elif is_solv == 'yes':
+        for atom in atom_lines[-n_atoms:-n_atoms + n_pol]:
+            line = atom.split()
+            if len(line) == 7:
+                fout.writelines(f"{line[0]} {line[2]} {line[1]}  {line[6]}  {line[3]}  {line[4]}  {line[5]}\n")
 
     for atom in sol_lines:
         line = atom.split()

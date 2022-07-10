@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-import numpy as np
-data=np.array([1,2,3,4,5,6])
-k = 2
-print(data)
-print(data.reshape(-1, k))
-data1=np.mean(data.reshape(-1, k), axis=1)
-print(data1)
+import argparse
+
+parser=argparse.ArgumentParser()
+parser.add_argument('--myflag', action='store_true')
+args=parser.parse_args()
+myflag = args.myflag
+print(myflag)
