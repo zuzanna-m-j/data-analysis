@@ -32,9 +32,11 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument('--wlc', action='store_true')
 parser.add_argument('--small', action='store_true')
+parser.add_argument('--sparse', action='store_true')
 parser.add_argument('--polar', action='store_true')
 parser.add_argument('--skip_solv', action='store_true')
 parser.add_argument('--bmon', action='store_true')
+parser.add_argument('--spice', action='store_true')
 
 parser.add_argument('--salt', default = 0.0, type = float)
 parser.add_argument('--chips', default = 1.0, type = float)
@@ -56,7 +58,7 @@ parser.add_argument('--Nz', default = 215, type = int)
 
 parser.add_argument('--dim', default = 3, type = int)
 
-parser.add_argument('--max_steps', default = 2000001, type = int)
+parser.add_argument('--max_steps', default = 4000001, type = int)
 parser.add_argument('--log_freq', default = 5000, type = int)
 parser.add_argument('--binary_freq', default = 20000, type = int)
 parser.add_argument('--traj_freq', default = 500000, type = int)
@@ -74,6 +76,8 @@ SALT = args.salt
 SMALL = args.small
 SKIP_SOLV = args.skip_solv
 BMON = args.bmon
+SPARSE = args.sparse
+SPICE = args.spice
 
 
 chi_ps = args.chips
@@ -179,6 +183,12 @@ else:
     angle_types = 0
 
 bond_types = 3
+
+spice_str = f"""N_SOL N_SALT
+{n_sol * 2} {n_salt}
+"""
+with open("spice.info", 'w') as f:
+    f.writelines(spice_str)
 
 properties = []
 bonds = []
@@ -356,17 +366,15 @@ if SKIP_SOLV == False:
 
         for xyz in range(3):
             pick = [np.random.uniform(0, cmin * box_dim[xyz]), np.random.uniform(cmin * box_dim[xyz], cmax * box_dim[xyz]), np.random.uniform(cmax * box_dim[xyz], box_dim[xyz])]
-            if SMALL == True and DIM == 2 and xyz == 1:
+            if SPARSE == True and DIM == 2 and xyz == 1:
                 coord = np.random.choice(pick, p=p)
-            elif SMALL == True and DIM == 3 and xyz == 2:
+            elif SPARSE == True and DIM == 3 and xyz == 2:
                 coord =  np.random.choice(pick, p=p)
             else:
                 coord = np.random.uniform(0,box_dim[xyz])
             props.append(coord)
         if DIM == 2:
             props[-1] = 0.0
-
-
         properties.append(copy.deepcopy(props))
         atom_count += 1
         mol_count += 1
@@ -376,16 +384,16 @@ if SKIP_SOLV == False:
 
         for xyz in range(3):
             pick = [np.random.uniform(0, cmin * box_dim[xyz]), np.random.uniform(cmin * box_dim[xyz], cmax * box_dim[xyz]), np.random.uniform(cmax * box_dim[xyz], box_dim[xyz])]
-            if SMALL == True and DIM == 2 and xyz == 1:
+            if SPARSE == True and DIM == 2 and xyz == 1:
                 coord = np.random.choice(pick, p=p)
-            elif SMALL == True and DIM == 3 and xyz == 2:
+            elif SPARSE == True and DIM == 3 and xyz == 2:
                 coord = np.random.choice(pick, p=p)
             else:
                 coord = np.random.uniform(0,box_dim[xyz])
             props.append(coord)
         if DIM == 2:
             props[-1] = 0.0
-
+        properties.append(copy.deepcopy(props))
         atom_count += 1
         mol_count += 1
 
@@ -396,9 +404,9 @@ if SKIP_SOLV == False:
 
             for xyz in range(3):
                 pick = [np.random.uniform(0, cmin * box_dim[xyz]), np.random.uniform(cmin * box_dim[xyz], cmax * box_dim[xyz]), np.random.uniform(cmax * box_dim[xyz], box_dim[xyz])]
-                if SMALL == True and DIM == 2 and xyz == 1:
+                if SPARSE == True and DIM == 2 and xyz == 1:
                     coord = np.random.choice(pick, p=p)
-                elif SMALL == True and DIM == 3 and xyz == 2:
+                elif SPARSE == True and DIM == 3 and xyz == 2:
                     coord = np.random.choice(pick, p=p)
                 else:
                     coord = np.random.uniform(0,box_dim[xyz])
@@ -414,9 +422,9 @@ if SKIP_SOLV == False:
 
             for xyz in range(3):
                 pick = [np.random.uniform(0, cmin * box_dim[xyz]), np.random.uniform(cmin * box_dim[xyz], cmax * box_dim[xyz]), np.random.uniform(cmax * box_dim[xyz], box_dim[xyz])]
-                if SMALL == True and DIM == 2 and xyz == 1:
+                if SPARSE == True and DIM == 2 and xyz == 1:
                     coord = np.random.choice(pick, p=p)
-                elif SMALL == True and DIM == 3 and xyz == 2:
+                elif SPARSE == True and DIM == 3 and xyz == 2:
                     coord = np.random.choice(pick, p=p)
                 else:
                     coord = np.random.uniform(0,box_dim[xyz])
@@ -433,9 +441,9 @@ if SKIP_SOLV == False:
 
         for xyz in range(3):
             pick = [np.random.uniform(0, cmin * box_dim[xyz]), np.random.uniform(cmin * box_dim[xyz], cmax * box_dim[xyz]), np.random.uniform(cmax * box_dim[xyz], box_dim[xyz])]
-            if SMALL == True and DIM == 2 and xyz == 1:
+            if SPARSE == True and DIM == 2 and xyz == 1:
                 coord = np.random.choice(pick, p=p)
-            elif SMALL == True and DIM == 3 and xyz == 2:
+            elif SPARSE == True and DIM == 3 and xyz == 2:
                 coord = np.random.choice(pick, p=p)
             else:
                 coord = np.random.uniform(0,box_dim[xyz])

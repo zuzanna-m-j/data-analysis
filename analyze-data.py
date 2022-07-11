@@ -3,7 +3,6 @@
 from ast import arg
 import glob
 import os
-from ssl import ALERT_DESCRIPTION_BAD_CERTIFICATE_HASH_VALUE
 import numpy as np
 from celluloid import Camera
 import matplotlib.pyplot as plt
@@ -23,6 +22,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--chi', default = "chips")
 parser.add_argument('--dim', default = 3, type=int)
+parser.add_argument('-N', type = int)
 
 
 args = parser.parse_args()
@@ -31,6 +31,8 @@ if args.chi == "chips":
     chi_name = r"$\chi_{PS}$"
 elif args.chi == "chibs":
     chi_name = r"$\chi_{BS}$"
+elif args.chi == "salt":
+    chi_name = "salt ratio"
 
 dim = args.dim
 
@@ -44,14 +46,20 @@ polarity = os.path.basename(rootdir)
 dirs = glob.glob(f'{rootdir}/[!_]*/')
 dirs.sort()
 
+#
+### 3D data arrays ###
+#
+
 polymer_rich = []
 salt_rich = []
-
 polymer_corona = []
 salt_corona = []
-
 polymer_poor = []
 salt_poor = []
+
+#
+### 2D data arrays ###
+#
 
 CHI_PS = []
 HIST_DATA = []
@@ -59,12 +67,19 @@ CLUST_SIZE = []
 RHO_THR = []
 DENS_PROF = [] 
 ION_DENS_PROF = [] 
+WATER_DENS_PROF = [] 
 
-i_AC_rich = []
-i_B_rich = []
-i_solv = []
+AC_CL_DENS = []
+B_CL_DENS = []
 
-fig_anim, ax_anim = plt.subplots(1,2)
+W_AC = []
+W_B = []
+
+I_AC = []
+I_B = []
+
+
+fig_anim, ax_anim = plt.subplots(1,1)
 camera = Camera(fig_anim)
        
 with open(f"{rootdir}/summary.txt", "w") as f:
@@ -106,6 +121,8 @@ for dir in dirs:
     yslices = list(set(f[:,1]))
     yslices.sort()
     yslices = np.array(yslices)
+
+    # load 2D data
 
     if dim == 2:
 
@@ -155,9 +172,11 @@ for dir in dirs:
 
     print("Collecting slice data...")
 
+    # 2D data processing
+
     if dim == 2:
 
-        N = 50
+        N = args.N
         R_g = np.sqrt((N-1) * 1.0**2/6)
 
         CHI_PS.append(chi_ps)
@@ -165,6 +184,7 @@ for dir in dirs:
         rhoAC_ = []
         rhoB_ = []
         rhoIon_ = []
+        rhoW_ = []
 
         x = data[0]
         y = data[1]
@@ -172,6 +192,7 @@ for dir in dirs:
 
         rhoAC = data[2] + data[4]
         rhoB = data[3]
+        rhoW = data[5]
         rhoIon = data[6] + data[7] + data[8]
 
         for xslice in xslices:
@@ -180,10 +201,12 @@ for dir in dirs:
                     rhoAC_.append(rhoAC[i])
                     rhoB_.append(rhoB[i])
                     rhoIon_.append(rhoIon[i])
+                    rhoW_.append(rhoW[i])
 
         rhoACdata = np.array(rhoAC_)
         rhoBdata = np.array(rhoB_)
         rhoIondata = np.array(rhoIon_)
+        rhoWdata = np.array(rhoW_)
 
         # meanAC = rhoACdata.mean()
         # meanB = rhoBdata.mean()
@@ -191,7 +214,7 @@ for dir in dirs:
 
         rhoACdata *= (R_g**2/N)
         rhoBdata *= (R_g**2/N)
-        rhoIondata *= (R_g**2/N)
+        # rhoIondata *= (R_g**2/N)
 
         meanAC = rhoACdata.mean()
         meanB = rhoBdata.mean()
@@ -207,6 +230,12 @@ for dir in dirs:
         # with open(f"{rootdir}/summary2.txt", "a+") as f:
         #     f.writelines(f'{chi_ps} {mean1} {mean2} {std1} {std2} {max1} {max2}\n')  
 
+
+
+
+
+        ### thresholding #######
+
         #calculate density profile
 
         ABC_dens = (rhoACdata + rhoBdata).reshape(len(xslices),-1)
@@ -217,10 +246,18 @@ for dir in dirs:
         Ion_dens = np.mean(Ion_dens, axis = 0)
         ION_DENS_PROF.append(Ion_dens)
 
+        W_dens = rhoWdata.reshape(len(xslices),-1)
+        W_dens = np.mean(W_dens, axis = 0)
+        WATER_DENS_PROF.append(W_dens)
 
-        IoninAC = []
-        IoninB = []
-        IoninSol = []   
+        ac_dens = []
+        b_dens = []
+
+        w_ac = []
+        w_b = []
+
+        i_ac = []
+        i_b = []
 
         AC_thr = []
         for i in range(len(rhoACdata)):
@@ -228,75 +265,142 @@ for dir in dirs:
                 AC_thr.append(0)
             else:
                 AC_thr.append(1)
+                ac_dens.append(rhoACdata[i])
+                w_ac.append(rhoWdata[i])
+                i_ac.append(rhoIondata[i])
         AC_thr = np.array(AC_thr)
 
         B_thr = []
         for i in range(len(rhoBdata)):
-            if rhoBdata[i] < 0.15:
+            if rhoBdata[i] < 0.075:
                 B_thr.append(0)
             else:
                 B_thr.append(1)
+                b_dens.append(rhoBdata[i])
+                w_b.append(rhoWdata[i])
+                i_b.append(rhoIondata[i])
         B_thr = np.array(B_thr)
+
+        ABC_thr = np.zeros_like(B_thr)
+        B_mask = np.argwhere(B_thr == 1)
+        AC_mask = np.argwhere(AC_thr == 1)
+        ABC_thr[B_mask] = 5
+        ABC_thr[AC_mask] = 10
+
+
+        AC_CL_DENS.append(np.average(ac_dens))
+        B_CL_DENS.append(np.average(b_dens))
+
+        W_AC.append(np.average(w_ac))
+        W_B.append(np.average(w_b))
+
+        I_AC.append(np.average(i_ac))
+        I_B.append(np.average(i_b))
+
         
+        xdim, ydim = (AC_thr.reshape(len(xslices),-1)).shape #rows - x, cols - y
 
         footprint = square(12)
-        xdim, ydim = (AC_thr.reshape(len(xslices),-1)).shape #rows - x, cols - y
-        imgAC  = AC_thr.reshape(len(xslices),-1)
-        imgAC = closing(imgAC,footprint)
-        imgAC = remove_small_holes(imgAC, 12)
-        imgAC = remove_small_objects(imgAC, 5)
-        labels = label(imgAC)
-        regions = regionprops(labels)
+        # imgAC  = AC_thr.reshape(len(xslices),-1)
+        # imgAC = closing(imgAC,footprint)
+        # imgAC = remove_small_holes(imgAC, 12)
+        # imgAC = remove_small_objects(imgAC, 5)
+        # labels = label(imgAC)
+        # regions = regionprops(labels)
 
-        imgB  = B_thr.reshape(len(xslices),-1)
-        imgB = closing(imgB,footprint)
-        imgB = remove_small_holes(imgB, 12)
-        imgB = remove_small_objects(imgB, 5)
-        labels = label(imgB)
-        regions = regionprops(labels)
+        # imgB  = B_thr.reshape(len(xslices),-1)
+        # imgB = closing(imgB,footprint)
+        # imgB = remove_small_holes(imgB, 12)
+        # imgB = remove_small_objects(imgB, 5)
+        # labels = label(imgB)
+        # regions = regionprops(labels)
 
-        # dens_cl = dens_cl.reshape(-1,len(xslices))
-        # dens_cr = dens_cr.reshape(-1,len(xslices))
+        ax_anim.imshow(ABC_thr.reshape(len(xslices),-1).T, cmap = "viridis")
+        ax_anim.set_xlim(0,xdim)
+        ax_anim.set_ylim(0,ydim)
+        ax_anim.text(200, 0.0, f"{chi_name}: {chi_ps}")
+        ax_anim.set_xlabel('X')
+        ax_anim.set_ylabel('Y')
+        ax_anim.set_title("Polymer density")
 
-        ax_anim[0].imshow(rhoACdata.reshape(len(xslices),-1).T, cmap = "Reds")
-        ax_anim[0].set_xlim(0,xdim)
-        ax_anim[0].set_ylim(0,ydim)
-        ax_anim[0].text(200, 0.0, f"{chi_name}: {chi_ps}")
-        ax_anim[0].set_xlabel('X')
-        ax_anim[0].set_ylabel('Y')
-        ax_anim[0].set_title("Polymer density")
+        # ax_anim[0].imshow(ABC_thr.reshape(len(xslices),-1).T, cmap = "viridis")
+        # ax_anim[0].set_xlim(0,xdim)
+        # ax_anim[0].set_ylim(0,ydim)
+        # ax_anim[0].text(200, 0.0, f"{chi_name}: {chi_ps}")
+        # ax_anim[0].set_xlabel('X')
+        # ax_anim[0].set_ylabel('Y')
+        # ax_anim[0].set_title("Polymer density")
 
-        ax_anim[1].imshow(AC_thr.reshape(len(xslices),-1).T, cmap = "coolwarm")
-        ax_anim[1].set_xlim(0,xdim)
-        ax_anim[1].set_ylim(0,ydim)
-        ax_anim[1].set_xlabel('X')
-        ax_anim[1].set_ylabel('Y')
-        ax_anim[1].set_title("Threshold")
+        # ax_anim[1].imshow(AC_thr.reshape(len(xslices),-1).T, cmap = "coolwarm")
+        # ax_anim[1].set_xlim(0,xdim)
+        # ax_anim[1].set_ylim(0,ydim)
+        # ax_anim[1].set_xlabel('X')
+        # ax_anim[1].set_ylabel('Y')
+        # ax_anim[1].set_title("Threshold")
 
         fig_anim.suptitle(f"Polymer density ({polarity})")
         camera.snap()
 
-        fig, ax = plt.subplots(1,2)
+        fig, ax = plt.subplots(1,3,constrained_layout = True)
         im0 = ax[0].imshow(rhoACdata.reshape(len(xslices),-1).T, cmap = "Reds")
         ax[0].set_xlim(0,xdim)
         ax[0].set_ylim(0,ydim)
-        ax[0].text(200, 0.0, f"{chi_name}: {chi_ps}")
+        # ax[0].text(200, 0.0, f"{chi_name}: {chi_ps}")
         ax[0].set_xlabel('X')
         ax[0].set_ylabel('Y')
-        ax[0].set_title("Polymer density")
-        fig.colorbar(im0, ax=ax[0])
+        ax[0].set_title("A & C")
+        # fig.colorbar(im0, ax=ax[0])
 
-        im1 = ax[1].imshow(AC_thr.reshape(len(xslices),-1).T, cmap = "coolwarm")
+        im1 = ax[1].imshow(ABC_thr.reshape(len(xslices),-1).T, cmap = "viridis")
         ax[1].set_xlim(0,xdim)
         ax[1].set_ylim(0,ydim)
         ax[1].set_xlabel('X')
         ax[1].set_ylabel('Y')
-        ax[1].set_title("Threshold")
-        fig.colorbar(im1, ax=ax[1])
+        # ax[1].set_title("Threshold")
+        # fig.colorbar(im1, ax=ax[1])
 
+        im1 = ax[2].imshow(B_thr.reshape(len(xslices),-1).T, cmap = "Greens")
+        ax[2].set_xlim(0,xdim)
+        ax[2].set_ylim(0,ydim)
+        ax[2].set_xlabel('X')
+        ax[2].set_ylabel('Y')
+        ax[2].set_title("B")
+        # fig.colorbar(im1, ax=ax[2])
 
-        fig.suptitle(f"Polymer density ({polarity})")
+        fig.suptitle(f"Polymer density - {polarity} - {chi_name}: {chi_ps}")
         fig.savefig(f"Polymer_density_{chi_ps}.png",dpi = 300)
+        plt.close()
+
+        fig, ax = plt.subplots(1,3,constrained_layout = True)
+
+        im0 = ax[0].imshow(rhoIondata.reshape(len(xslices),-1).T, cmap = "Greens")
+        ax[0].set_xlim(0,xdim)
+        ax[0].set_ylim(0,ydim)
+        #ax[0].text(200, 0.0, f"{chi_name}: {chi_ps}")
+        ax[0].set_xlabel('X')
+        ax[0].set_ylabel('Y')
+        ax[0].set_title("Ions")
+        # fig.colorbar(im0, ax=ax[0])
+
+        im1 = ax[1].imshow(ABC_thr.reshape(len(xslices),-1).T, cmap = "viridis")
+        ax[1].set_xlim(0,xdim)
+        ax[1].set_ylim(0,ydim)
+        ax[1].set_xlabel('X')
+        ax[1].set_ylabel('Y')
+        ax[1].set_title("Polymer")
+        # fig.colorbar(im1, ax=ax[1])
+
+        im1 = ax[2].imshow(rhoWdata.reshape(len(xslices),-1).T, cmap = "Blues")
+        ax[2].set_xlim(0,xdim)
+        ax[2].set_ylim(0,ydim)
+        ax[2].set_xlabel('X')
+        ax[2].set_ylabel('Y')
+        ax[2].set_title("Water")
+        # fig.colorbar(im1, ax=ax[2])
+
+        fig.suptitle(f"Species density ({polarity})")
+        fig.savefig(f"Species_density_{chi_ps}.png",dpi = 500)
+        plt.close()
 
 
             # corona = ((dilation(img,square(7))).astype(int) - img.astype(int)).astype(bool)
@@ -1035,6 +1139,7 @@ if dim == 2:
 
     CL_POL_DENS = []
     CL_ION_DENS = []
+    CL_WATER_DENS = []
 
     SOL_POL_DENS = []
     SOL_ION_DENS = []
@@ -1046,35 +1151,116 @@ if dim == 2:
 
         vals = np.mean(DENS_PROF[i].reshape(-1, 11), axis=1)
         ivals = np.mean(ION_DENS_PROF[i].reshape(-1, 11), axis=1)
-        thr = np.argwhere(vals > 0.15)
+        wvals = np.mean(WATER_DENS_PROF[i].reshape(-1, 11), axis=1)
+        thr_high = np.argwhere(vals > 0.3)
+        thr_low = np.argwhere(vals <= 0.3)
 
-        CL_POL_DENS.append(np.average(vals[thr]))
-        CL_ION_DENS.append(np.mean(ivals[thr]))
+        CL_POL_DENS.append(np.average(vals[thr_high]))
+        CL_ION_DENS.append(np.average(ivals[thr_high]))
+        CL_WATER_DENS.append(np.average(wvals[thr_high]))
 
-        SOL_POL_DENS.append(np.average(vals[~thr]))
-        SOL_ION_DENS.append(np.mean(ivals[~thr]))
+        SOL_POL_DENS.append(np.average(vals[thr_low]))
+        SOL_ION_DENS.append(np.average(ivals[thr_low]))
 
-        ax.plot(ordinate,vals,label = CHI_PS[i])
+        ax.plot(ordinate,vals,label = f'{chi_name}: {CHI_PS[i]}')
+
+
     ax.legend(loc = 'best')
     ax.set_ylabel(r"$C^{*}$")
     ax.set_xlabel("y")
     plt.tight_layout()
     fig.savefig(f"Polymer_Density_Profile_{polarity}.png", dpi = 300)
 
+    ordinate = np.mean(yslices.reshape(-1, 11), axis=1)
+    fig, ax = plt.subplots()
+    plt.suptitle(f"Ion Density Profile ({polarity})")
+    for i in range(len(ION_DENS_PROF)):
+        vals = np.mean(ION_DENS_PROF[i].reshape(-1, 11), axis=1)
+        ax.plot(ordinate,vals,label = f'{chi_name}: {CHI_PS[i]}', marker = '.', linewidth = 1.0)
+    ax.legend(loc = 'best')
+    ax.set_ylabel(r"$\rho_{ion}$")
+    ax.set_xlabel("y")
+    plt.tight_layout()
+    fig.savefig(f"Ion_Density_Profile_{polarity}.png", dpi = 300)
+    plt.close()
+
+    ordinate = np.mean(yslices.reshape(-1, 11), axis=1)
+    fig, ax = plt.subplots()
+    plt.suptitle(f"Ion Density Profile ({polarity})")
+    for i in range(len(WATER_DENS_PROF)):
+        vals = np.mean(WATER_DENS_PROF[i].reshape(-1, 11), axis=1)
+        ax.plot(ordinate,vals,label = f'{chi_name}: {CHI_PS[i]}', marker = '.', linewidth = 1.0)
+    ax.legend(loc = 'best')
+    ax.set_ylabel(r"$\rho_{ion}$")
+    ax.set_xlabel("y")
+    plt.tight_layout()
+    fig.savefig(f"Water_Density_Profile_{polarity}.png", dpi = 300)
+    plt.close()
+
+    ordinate = np.mean(yslices.reshape(-1, 11), axis=1)
+    fig, ax = plt.subplots()
+    camera = Camera(fig)
+    plt.suptitle(f"Ion Density Profile ({polarity})")
+    for i in range(len(ION_DENS_PROF)):
+        vals = np.mean(ION_DENS_PROF[i].reshape(-1, 11), axis=1)
+        ax.plot(ordinate,vals,label = f'{chi_name}: {CHI_PS[i]}', marker = '.', linewidth = 1.0)
+        camera.snap()
+    ax.legend(loc = 'best')
+    ax.set_ylabel(r"$\rho_{ion}$")
+    ax.set_xlabel("y")
+    plt.tight_layout()
+    res = camera.animate(interval = 500)
+    res.save(f'Ion_Density_Profile_{polarity}.gif', dpi = 300)
+
+
     fig, ax = plt.subplots()
     plt.suptitle(f"Polymer Density - {polarity}")
     ax.set_ylabel(f"{chi_name}")
     ax.set_xlabel(r"$<C^{*}>$")
-    ax.plot(CL_POL_DENS,CHI_PS, color = "tab:green", linestyle = 'dotted', marker = 'o', label = 'slab')
-    ax.plot(SOL_POL_DENS,CHI_PS, color = "tab:blue", linestyle = 'dotted', marker = 'o', label = 'solvent')
+    ax.plot(CL_POL_DENS,CHI_PS, color = "tab:red", linestyle = 'None', marker = 'o', label = 'slab')
+    ax.plot(SOL_POL_DENS,CHI_PS, color = "tab:blue", linestyle = 'None', marker = 'd', label = 'solvent')
     ax.legend(loc = 'best')
     fig.savefig(f"Pol_Density_Clust_{polarity}.png", dpi = 300)
+    plt.close()
 
     fig, ax = plt.subplots()
     plt.suptitle(f"Ion density - {polarity}")
     ax.set_ylabel(f"{chi_name}")
     ax.set_xlabel(r"$<\rho_{ion}>$")
-    ax.plot(CL_ION_DENS,CHI_PS, color = 'tab:green', linestyle = 'dotted', marker = 'o', label = 'slab')
-    ax.plot(SOL_ION_DENS,CHI_PS, color = 'tab:blue', linestyle = 'dotted', marker = 'o', label = 'solvent')
+    ax.plot(CL_ION_DENS,CHI_PS, color = 'tab:red', linestyle = 'None', marker = 'o', label = 'slab')
+    ax.plot(SOL_ION_DENS,CHI_PS, color = 'tab:blue', linestyle = 'None', marker = 'd', label = 'solvent')
     ax.legend(loc = 'best')
     fig.savefig(f"Ion_Density_Clust_{polarity}.png", dpi = 300)
+    plt.close()
+
+    fig, ax = plt.subplots()
+    plt.suptitle(f"Ion density - {polarity}")
+    ax.set_ylabel(f"{chi_name}")
+    ax.set_xlabel(r"$<\rho_{ion}>$")
+    ax.plot(CL_ION_DENS,CHI_PS, color = 'tab:red', linestyle = 'None', marker = 'o', label = 'slab')
+    ax.plot(SOL_ION_DENS,CHI_PS, color = 'tab:blue', linestyle = 'None', marker = 'd', label = 'solvent')
+    ax.plot(I_AC,CHI_PS, color = 'tab:green', linestyle = 'None', marker = 'H', label = 'A&C')
+    ax.plot(I_B,CHI_PS, color = 'tab:purple', linestyle = 'None', marker = 'X', label = 'B')
+    ax.legend(loc = 'best')
+    fig.savefig(f"Ion_Density_Clust_{polarity}.png", dpi = 300)
+    plt.close()
+
+    fig, ax = plt.subplots()
+    plt.suptitle(f"Monomer density - {polarity}")
+    ax.set_ylabel(f"{chi_name}")
+    ax.set_xlabel(r"$<C^{*}>$")
+    ax.plot(AC_CL_DENS,CHI_PS, color = 'tab:red', linestyle = 'None', marker = 'o', label = 'A&C')
+    ax.plot(B_CL_DENS,CHI_PS, color = 'tab:purple', linestyle = 'None', marker = 'd', label = 'B')
+    ax.legend(loc = 'best')
+    fig.savefig(f"Mon_Density_Clust_{polarity}.png", dpi = 300)
+    plt.close()
+
+    fig, ax = plt.subplots()
+    plt.suptitle(f"Water density - {polarity}")
+    ax.set_ylabel(f"{chi_name}")
+    ax.set_xlabel(r"$<C^{*}>$")
+    ax.plot(W_AC,CHI_PS, color = 'tab:red', linestyle = 'None', marker = 'o', label = 'A&C')
+    ax.plot(W_B,CHI_PS, color = 'tab:purple', linestyle = 'None', marker = 'd', label = 'B')
+    ax.legend(loc = 'best')
+    fig.savefig(f"Water_Density_Clust_{polarity}.png", dpi = 300)
+    plt.close()
