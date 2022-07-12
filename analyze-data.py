@@ -1186,7 +1186,7 @@ if dim == 2:
 
     ordinate = np.mean(yslices.reshape(-1, 11), axis=1)
     fig, ax = plt.subplots()
-    plt.suptitle(f"Ion Density Profile ({polarity})")
+    plt.suptitle(f"Water Density Profile ({polarity})")
     for i in range(len(WATER_DENS_PROF)):
         vals = np.mean(WATER_DENS_PROF[i].reshape(-1, 11), axis=1)
         ax.plot(ordinate,vals,label = f'{chi_name}: {CHI_PS[i]}', marker = '.', linewidth = 1.0)

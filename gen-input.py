@@ -37,6 +37,8 @@ parser.add_argument('--polar', action='store_true')
 parser.add_argument('--skip_solv', action='store_true')
 parser.add_argument('--bmon', action='store_true')
 parser.add_argument('--spice', action='store_true')
+parser.add_argument('--scramble', action='store_true')
+
 
 parser.add_argument('--salt', default = 0.0, type = float)
 parser.add_argument('--chips', default = 1.0, type = float)
@@ -65,8 +67,11 @@ parser.add_argument('--traj_freq', default = 500000, type = int)
 
 parser.add_argument('--midpush', default= 0.0, type = float)
 
+parser.add_argument('--scd', default= 0.0, type = float)
+
 
 args = parser.parse_args()
+
 
 POLAR = args.polar
 WLC = args.wlc
@@ -78,6 +83,7 @@ SKIP_SOLV = args.skip_solv
 BMON = args.bmon
 SPARSE = args.sparse
 SPICE = args.spice
+SCRAMBLE = args.scramble
 
 
 chi_ps = args.chips
@@ -95,6 +101,47 @@ Nz = args.Nz
 cmax = args.cmax
 cmin = args.cmin
 
+if POLAR == True:
+
+    A =   [1,+1, 1]
+    B =   [2, 0, 0]
+    C =   [3,-1, 1]
+    W =   [4, 0, 0] 
+    CAT = [5,+1, 0]
+    ANI = [6,-1, 0]
+    CI =  [7, 1, 0]
+    D =   [8, 1, 0]
+
+else:
+    A =   [1,+1, 0]
+    B =   [2, 0, 0]
+    C =   [3,-1, 0]
+    W =   [4, 0, 0] 
+    CAT = [5,+1, 0]
+    ANI = [6,-1, 0]
+    CI =  [7, 1, 0]
+    D =   [8, 1, 0]
+
+types = [A,B,C,W,CAT,ANI,CI,D]
+particle_types = len(types)
+
+def SCD(sq):
+    s = []
+    for m in list(sq):
+        if m == "A":
+            s.append(A[1])
+        elif m == "C":
+            s.append(C[1])
+        else:
+            s.append(0)
+    scd = 0
+    for m in (1,len(sq)):
+        for n in (0,m):
+            scd += s[m] * s[n] * np.sqrt(m - n)
+    scd = scd/len(sq)
+    return scd
+
+
 N_a = 25
 if BMON == True:
     N_b = 25
@@ -103,6 +150,14 @@ else:
 N_c = 25
 N = N_a + N_b + N_c
 seq = N_a * "A" + N_b * "B" + N_c * "C"
+
+if SCRAMBLE == True:
+
+    seq_l = list(seq)
+    random.shuffle(seq_l)
+    seq = ''.join(seq_l)
+
+scd_val = 0
 
 box_dim = [lx, ly, lz]
 
@@ -140,30 +195,6 @@ atom_count = 1
 mol_count = 1
 bond_count = 1
 angle_count = 0
-
-if POLAR == True:
-
-    A =   [1,+1, 1]
-    B =   [2, 0, 0]
-    C =   [3,-1, 1]
-    W =   [4, 0, 0] 
-    CAT = [5,+1, 0]
-    ANI = [6,-1, 0]
-    CI =  [7, 1, 0]
-    D =   [8, 1, 0]
-
-else:
-    A =   [1,+1, 0]
-    B =   [2, 0, 0]
-    C =   [3,-1, 0]
-    W =   [4, 0, 0] 
-    CAT = [5,+1, 0]
-    ANI = [6,-1, 0]
-    CI =  [7, 1, 0]
-    D =   [8, 1, 0]
-
-types = [A,B,C,W,CAT,ANI,CI,D]
-particle_types = len(types)
 
 aii = kappa/(2 * rho0)
 Aij = np.zeros((particle_types-1,particle_types-1))
@@ -381,7 +412,6 @@ if SKIP_SOLV == False:
 
     for i in range(n_ci//2):
         props = [atom_count,mol_count,CI[0], -1]
-
         for xyz in range(3):
             pick = [np.random.uniform(0, cmin * box_dim[xyz]), np.random.uniform(cmin * box_dim[xyz], cmax * box_dim[xyz]), np.random.uniform(cmax * box_dim[xyz], box_dim[xyz])]
             if SPARSE == True and DIM == 2 and xyz == 1:
@@ -641,6 +671,8 @@ Chi_BS: {chi_bs}
 Chi_PI: {chi_pi}
 Phi: {args.phi}
 
+N: {N}
+
 BMON: {BMON}
 
 
@@ -655,11 +687,13 @@ Salt to water: {n_salt/n_sol}
 Number density: {(n_pol * N + n_sol + n_ci + n_salt)/box_vol}
 Polymer volume fraction: {N * n_pol/(n_pol * N + n_sol + n_ci + n_salt)}
 
+Scramble: {SCRAMBLE}
+SCD: {scd_val}
 -------------------------------------------------------------------------
 
 
 """
-with open("../../info.txt", 'a+') as f:
+with open("../info.txt", 'a+') as f:
     f.writelines(descr)
 print(descr)
 

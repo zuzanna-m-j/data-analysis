@@ -75,21 +75,18 @@ with open(file=file_name,mode='w') as fout:
         line = atom.split()
         if len(line) == 7:
             fout.writelines(f"{line[0]} {line[2]} {line[1]}  {line[6]}  {line[3]}  {line[4]}  {line[5]}\n")
-    print(f"{line[0]} {line[2]} {line[1]}  {line[6]}  {line[3]}  {line[4]}  {line[5]}\n")
 
-    for atom in salt:
+    for atom in salt[:len(salt)//2]:
         line = atom.split()
         if len(line) == 7:
-            print(f"{atom_count} {line[2]} {1.000}  {line[6]}  {line[3]}  {line[4]}  {line[5]}\n")
-            fout.writelines(f"{atom_count} {line[2]} {1.000}  {line[6]}  {line[3]}  {line[4]}  {line[5]}\n")
+            fout.writelines(f"{atom_count} {line[2]} {5}  {1.000}  {line[3]}  {line[4]}  {line[5]}\n")
             atom_count += 1
 
-    # for atom in salt[n_salt//2:]:
-    #     line = atom.split()
-    #     if len(line) == 7:
-    #         fout.writelines(f"{line[0]} {6} {line[1]}  {line[6]}  {line[3]}  {line[4]}  {-1.000}\n")
-    #         atom_count += 1
-    #         mol_count += 1
+    for atom in salt[len(salt)//2:]:
+        line = atom.split()
+        if len(line) == 7:
+            fout.writelines(f"{atom_count} {line[2]} {6}  {-1.000}  {line[3]}  {line[4]}  {line[5]}\n")
+            atom_count += 1
 
     for line in tail:
         fout.writelines(line)
