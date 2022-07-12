@@ -38,6 +38,7 @@ parser.add_argument('--skip_solv', action='store_true')
 parser.add_argument('--bmon', action='store_true')
 parser.add_argument('--spice', action='store_true')
 parser.add_argument('--scramble', action='store_true')
+parser.add_argument('--sequence', action='store_true')
 
 
 parser.add_argument('--salt', default = 0.0, type = float)
@@ -73,9 +74,6 @@ parser.add_argument('--scd', default= 0.0, type = float)
 args = parser.parse_args()
 
 
-POLAR = args.polar
-WLC = args.wlc
-DIM = args.dim
 MIDPUSH = args.midpush
 SALT = args.salt
 SMALL = args.small
@@ -101,7 +99,7 @@ Nz = args.Nz
 cmax = args.cmax
 cmin = args.cmin
 
-if POLAR == True:
+if args.polar == True:
 
     A =   [1,+1, 1]
     B =   [2, 0, 0]
@@ -127,7 +125,8 @@ particle_types = len(types)
 
 def SCD(sq):
     s = []
-    for m in list(sq):
+    sq = list(sq)
+    for m in sq:
         if m == "A":
             s.append(A[1])
         elif m == "C":
@@ -135,10 +134,10 @@ def SCD(sq):
         else:
             s.append(0)
     scd = 0
-    for m in (1,len(sq)):
-        for n in (0,m):
+    for m in range(1,len(s)):
+        for n in range(0,m):
             scd += s[m] * s[n] * np.sqrt(m - n)
-    scd = scd/len(sq)
+    scd = scd/len(s)
     return scd
 
 
@@ -151,17 +150,24 @@ N_c = 25
 N = N_a + N_b + N_c
 seq = N_a * "A" + N_b * "B" + N_c * "C"
 
-if SCRAMBLE == True:
+if args.scramble == True:
 
     seq_l = list(seq)
     random.shuffle(seq_l)
     seq = ''.join(seq_l)
 
-scd_val = 0
+    with open("seq.data", 'w') as f:
+        f.wrtitelines(seq)
+
+if args.sequence == True:
+    with open("../seq.data", 'r') as f:
+        seq = f.readlines().strip()
+
+scd_val = SCD(seq)
 
 box_dim = [lx, ly, lz]
 
-if DIM == 2:
+if args.dim == 2:
     box_vol = lx * ly
 else:
     box_vol = lx * ly * lz
@@ -208,7 +214,7 @@ for i in range(particle_types-1):
             Aij[i][j] = CHI[i][j]/rho0 + 2.0 * aii
             g_count += 1
 
-if WLC == True:
+if args.wlc == True:
     angle_types = 1
 else:
     angle_types = 0
@@ -273,16 +279,16 @@ for m_num in range(n_pol):
 
             if chain_pos == 0:
                 for xyz in range(3):
-                    if SMALL == True and DIM == 2 and xyz == 1:
+                    if SMALL == True and args.dim == 2 and xyz == 1:
                         coord = np.random.uniform(cmin * box_dim[xyz], cmax * box_dim[xyz])
-                    elif SMALL == True and DIM == 3 and xyz == 2:
+                    elif SMALL == True and args.dim == 3 and xyz == 2:
                         coord = np.random.uniform(cmin * box_dim[xyz], cmax * box_dim[xyz])
                     else:
                         coord = np.random.uniform(0,box_dim[xyz])
 
                     props.append(coord)
 
-                if DIM == 2:
+                if args.dim == 2:
                     props[-1] = 0.0
 
             else:
@@ -292,13 +298,13 @@ for m_num in range(n_pol):
                 x = 1.0 * np.cos(phi)*np.sin(theta) + properties[-1][4]
                 y = 1.0 * np.sin(phi)*np.sin(theta) + properties[-1][5]
                 z = 1.0 * np.cos(theta) + properties[-1][6]
-                if SMALL == True and DIM == 2:
+                if SMALL == True and args.dim == 2:
                     while cmin * box_dim[1] > y > cmax * box_dim[1]:
                         y = 1.0 * np.sin(phi)*np.sin(theta) + properties[-1][5]
-                elif SMALL == True and DIM == 3:
+                elif SMALL == True and args.dim == 3:
                     while cmin * box_dim[2] > z > cmax * box_dim[2]:
                         z = 1.0 * np.sin(phi)*np.sin(theta) + properties[-1][5]
-                if DIM == 2:
+                if args.dim == 2:
                     z = 0.0
                 
                 props.append(x)
@@ -337,16 +343,16 @@ for m_num in range(n_pol):
 
             if chain_pos == 0:
                 for xyz in range(3):
-                    if SMALL == True and DIM == 2 and xyz == 1:
+                    if SMALL == True and args.dim == 2 and xyz == 1:
                         coord = np.random.uniform(cmin * box_dim[xyz], cmax * box_dim[xyz])
-                    elif SMALL == True and DIM == 3 and xyz == 2:
+                    elif SMALL == True and args.dim == 3 and xyz == 2:
                         coord = np.random.uniform(cmin * box_dim[xyz], cmax * box_dim[xyz])
                     else:
                         coord = np.random.uniform(0,box_dim[xyz])
                         
                     props.append(coord)
 
-                if DIM == 2:
+                if args.dim == 2:
                     props[-1] = 0.0
 
             else:
@@ -356,13 +362,13 @@ for m_num in range(n_pol):
                 x = 1.0 * np.cos(phi)*np.sin(theta) + properties[-1][4]
                 y = 1.0 * np.sin(phi)*np.sin(theta) + properties[-1][5]
                 z = 1.0 * np.cos(theta) + properties[-1][6]
-                if SMALL == True and DIM == 2:
+                if SMALL == True and args.dim == 2:
                     while cmin * box_dim[1] > y > cmax * box_dim[1]:
                         y = 1.0 * np.sin(phi)*np.sin(theta) + properties[-1][5]
-                elif SMALL == True and DIM == 3:
+                elif SMALL == True and args.dim == 3:
                     while cmin * box_dim[2] > z > cmax * box_dim[2]:
                         z = 1.0 * np.sin(phi)*np.sin(theta) + properties[-1][5]
-                if DIM == 2:
+                if args.dim == 2:
                     z = 0.0
                 
                 props.append(x)
@@ -381,7 +387,7 @@ for m_num in range(n_pol):
     mol_count += 1
 
 
-if POLAR == True:
+if args.polar == True:
     pol_atms = int(n_pol * (2 * N_a + 2 * N_c + N_b))
 else:
     pol_atms = int(n_pol * (N_a + N_b + N_c))
@@ -397,14 +403,14 @@ if SKIP_SOLV == False:
 
         for xyz in range(3):
             pick = [np.random.uniform(0, cmin * box_dim[xyz]), np.random.uniform(cmin * box_dim[xyz], cmax * box_dim[xyz]), np.random.uniform(cmax * box_dim[xyz], box_dim[xyz])]
-            if SPARSE == True and DIM == 2 and xyz == 1:
+            if SPARSE == True and args.dim == 2 and xyz == 1:
                 coord = np.random.choice(pick, p=p)
-            elif SPARSE == True and DIM == 3 and xyz == 2:
+            elif SPARSE == True and args.dim == 3 and xyz == 2:
                 coord =  np.random.choice(pick, p=p)
             else:
                 coord = np.random.uniform(0,box_dim[xyz])
             props.append(coord)
-        if DIM == 2:
+        if args.dim == 2:
             props[-1] = 0.0
         properties.append(copy.deepcopy(props))
         atom_count += 1
@@ -414,14 +420,14 @@ if SKIP_SOLV == False:
         props = [atom_count,mol_count,CI[0], -1]
         for xyz in range(3):
             pick = [np.random.uniform(0, cmin * box_dim[xyz]), np.random.uniform(cmin * box_dim[xyz], cmax * box_dim[xyz]), np.random.uniform(cmax * box_dim[xyz], box_dim[xyz])]
-            if SPARSE == True and DIM == 2 and xyz == 1:
+            if SPARSE == True and args.dim == 2 and xyz == 1:
                 coord = np.random.choice(pick, p=p)
-            elif SPARSE == True and DIM == 3 and xyz == 2:
+            elif SPARSE == True and args.dim == 3 and xyz == 2:
                 coord = np.random.choice(pick, p=p)
             else:
                 coord = np.random.uniform(0,box_dim[xyz])
             props.append(coord)
-        if DIM == 2:
+        if args.dim == 2:
             props[-1] = 0.0
         properties.append(copy.deepcopy(props))
         atom_count += 1
@@ -434,14 +440,14 @@ if SKIP_SOLV == False:
 
             for xyz in range(3):
                 pick = [np.random.uniform(0, cmin * box_dim[xyz]), np.random.uniform(cmin * box_dim[xyz], cmax * box_dim[xyz]), np.random.uniform(cmax * box_dim[xyz], box_dim[xyz])]
-                if SPARSE == True and DIM == 2 and xyz == 1:
+                if SPARSE == True and args.dim == 2 and xyz == 1:
                     coord = np.random.choice(pick, p=p)
-                elif SPARSE == True and DIM == 3 and xyz == 2:
+                elif SPARSE == True and args.dim == 3 and xyz == 2:
                     coord = np.random.choice(pick, p=p)
                 else:
                     coord = np.random.uniform(0,box_dim[xyz])
                 props.append(coord)
-            if DIM == 2:
+            if args.dim == 2:
                 props[-1] = 0.0
 
             properties.append(copy.deepcopy(props))
@@ -452,14 +458,14 @@ if SKIP_SOLV == False:
 
             for xyz in range(3):
                 pick = [np.random.uniform(0, cmin * box_dim[xyz]), np.random.uniform(cmin * box_dim[xyz], cmax * box_dim[xyz]), np.random.uniform(cmax * box_dim[xyz], box_dim[xyz])]
-                if SPARSE == True and DIM == 2 and xyz == 1:
+                if SPARSE == True and args.dim == 2 and xyz == 1:
                     coord = np.random.choice(pick, p=p)
-                elif SPARSE == True and DIM == 3 and xyz == 2:
+                elif SPARSE == True and args.dim == 3 and xyz == 2:
                     coord = np.random.choice(pick, p=p)
                 else:
                     coord = np.random.uniform(0,box_dim[xyz])
                 props.append(coord)
-            if DIM == 2:
+            if args.dim == 2:
                 props[-1] = 0.0
 
             properties.append(copy.deepcopy(props))
@@ -471,14 +477,14 @@ if SKIP_SOLV == False:
 
         for xyz in range(3):
             pick = [np.random.uniform(0, cmin * box_dim[xyz]), np.random.uniform(cmin * box_dim[xyz], cmax * box_dim[xyz]), np.random.uniform(cmax * box_dim[xyz], box_dim[xyz])]
-            if SPARSE == True and DIM == 2 and xyz == 1:
+            if SPARSE == True and args.dim == 2 and xyz == 1:
                 coord = np.random.choice(pick, p=p)
-            elif SPARSE == True and DIM == 3 and xyz == 2:
+            elif SPARSE == True and args.dim == 3 and xyz == 2:
                 coord = np.random.choice(pick, p=p)
             else:
                 coord = np.random.uniform(0,box_dim[xyz])
             props.append(coord)
-        if DIM == 2:
+        if args.dim == 2:
             props[-1] = 0.0
 
         properties.append(copy.deepcopy(props))
@@ -495,7 +501,7 @@ if SKIP_SOLV == False:
         mol_count += 1
 
 
-if WLC == True:
+if args.wlc == True:
     #process angles
     for mol in mol_angles:
         for i in range(len(mol)-2):
@@ -506,7 +512,7 @@ with open("head.data", 'w') as fout:
     fout.writelines("Madatory string --> First rule of programing: if it works then don't touch it!\n\n")
     fout.writelines(f'{atom_count - 1} atoms\n')
     fout.writelines(f'{bond_count - 1} bonds\n')
-    if WLC == True:
+    if args.wlc == True:
         fout.writelines(f'{angle_count - 1} angles\n')
     else:
         fout.writelines(f'{0} angles\n')
@@ -540,7 +546,7 @@ with open('tail.data', 'w') as fout:
     fout.writelines('\n')
     for line in bonds:
         fout.writelines(f"{line[0]} {line[1]}  {line[2]} {line[3]}\n")
-    if WLC == True:
+    if args.wlc == True:
         fout.writelines('\n')
         fout.writelines('Angles\n')
         fout.writelines('\n')
@@ -558,7 +564,7 @@ with open("info.data", 'w') as f:
     f.writelines(f"is_solv: {is_solv}")
 
 
-input_file = f"""Dim {DIM}
+input_file = f"""Dim {args.dim}
 
 max_steps {args.max_steps}
 log_freq {args.log_freq}
@@ -601,7 +607,7 @@ extraforce polyc midpush {MIDPUSH}
 
 """
 
-if WLC == True:
+if args.wlc == True:
     input_file += f"""angle 1 wlc {1.0:7f}
     """
 
@@ -615,7 +621,7 @@ with open('input', 'w') as fout:
 
 
 
-# input_file = f"""Dim {DIM}
+# input_file = f"""Dim {args.dim}
 
 # max_steps 1000001
 # log_freq 1000
@@ -640,7 +646,7 @@ with open('input', 'w') as fout:
 
 # """
 
-# if WLC == True:
+# if args.wlc == True:
 #     input_file += f"""angle 1 wlc {1.0:7f}
 #     """
 
@@ -658,11 +664,11 @@ file_name = os.getcwd()
 
 descr = f"""File: {file_name}
 
-DIM: {DIM}
+DIM: {args.dim}
 BOX: {lx} {ly} {lz}
 N_GRID {Nx} {Ny} {Nz}
 
-Polarity: {POLAR}
+Polarity: {args.polar}
 Salt ratio: {SALT}
 Midpush = {MIDPUSH}
 

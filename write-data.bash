@@ -1,8 +1,10 @@
-!/bin/bash
+#!/bin/bash
+
+#for chi in 0.00 0.05 0.10 0.25 0.50 0.75 1.00 1.25 1.50 2.00; do
+#for salt in 0.005 0.01 0.05 0.10 0.15 0.2 0.25 0.30; do
 
 clear
 echo "Generating input files..."
-
 
 cp /home/jello/Downloads/cuda-bd-master/research/data-analysis/gen-input.py input.py
 cp /home/jello/Downloads/cuda-bd-master/research/data-analysis/stitch-input.py stitch.py
@@ -10,14 +12,53 @@ cp /home/jello/Downloads/cuda-bd-master/research/data-analysis/stitch-eq.py stit
 cp /home/jello/Downloads/cuda-bd-master/research/data-analysis/spice-up.py spice.py
 cp /home/jello/Downloads/cuda-bd-master/research/data-analysis/write-data.bash write.bash
 
+mkdir polar
 cd polar
-  for salt in 0.005 0.01 0.05 0.10 0.15 0.2 0.25 0.30; do
-  cd "$salt"
-  python3 ../../input.py --chips 0.75 --chibs 0.00 --lx 50 --ly 200 --lz 5 --Nx 111 --Ny 451 --Nz 1 --dim 2 --small --phi 0.4 --salt "$salt" --polar
-  python3 ../../stitch.py --atoms traj.lammpstrj
+
+  python3 ../input.py --chips 1.0 --chibs 0.00 --lx 50 --ly 200 --lz 5 --Nx 111 --Ny 451 --Nz 1 --dim 2 --small --phi 0.4 --polar --scramble --max_step 7500001 --traj_freq 500000 --midpush 0.05
+  python3 ../stitch.py
+
+  ~/Downloads/cuda-tild/gpu-tild
+
+  for chi in 0.00 0.05 0.10 0.25 0.50 0.75 1.00 1.25 1.50 2.00; do
+  mkdir "$chi"
+  cd "$chi"
+  python3 ../../input.py --chips "$chi" --chibs 0.00 --lx 50 --ly 200 --lz 5 --Nx 111 --Ny 451 --Nz 1 --dim 2 --small --phi 0.4 --polar
+  python3 ../../stitch.py --atoms ../traj.lammpstrj
     cd ../
     done
 cd ../
+
+
+# cd polar
+#   for chi in 0.00 0.05 0.10 0.25 0.50 0.75 1.00 1.25 1.50 2.00; do
+#   cd "$chi"
+#    ~/Downloads/cuda-tild/gpu-tild
+#     cd ../
+#     done
+# cd ../
+
+
+
+# clear
+# echo "Generating input files..."
+
+
+# cp /home/jello/Downloads/cuda-bd-master/research/data-analysis/gen-input.py input.py
+# cp /home/jello/Downloads/cuda-bd-master/research/data-analysis/stitch-input.py stitch.py
+# cp /home/jello/Downloads/cuda-bd-master/research/data-analysis/stitch-eq.py stitch-eq.py
+# cp /home/jello/Downloads/cuda-bd-master/research/data-analysis/spice-up.py spice.py
+# cp /home/jello/Downloads/cuda-bd-master/research/data-analysis/write-data.bash write.bash
+
+# mkdir polar
+# cd polar
+#   for salt in 0.005 0.01 0.05 0.10 0.15 0.2 0.25 0.30; do
+#   cd "$salt"
+#   python3 ../../input.py --chips 0.75 --chibs 0.00 --lx 50 --ly 200 --lz 5 --Nx 111 --Ny 451 --Nz 1 --dim 2 --small --phi 0.4 --salt "$salt" --polar
+#   python3 ../../stitch.py --atoms traj.lammpstrj
+#     cd ../
+#     done
+# cd ../
 
 
 # mkdir non-polar
@@ -25,15 +66,15 @@ cd ../
 
 #   python3 ../input.py --chips 1.50 --chibs 2.00 --lx 50 --ly 200 --lz 5 --Nx 111 --Ny 451 --Nz 1 --dim 2 --small --midpush 0.05 --max_step 750001 --log_freq 5000 --traj_freq 50000 --phi 0.4
 #   python3 ../stitch.py
-  # ~/Downloads/cuda-tild/gpu-tild
+#   ~/Downloads/cuda-tild/gpu-tild
 
 #   for salt in 0.00 0.005 0.01 0.05 0.1 0.15 0.2 0.25 0.30 0.40; do
 #   mkdir "$salt"
 #   cd "$salt"
-  # python3 ../../input.py --chips 1.00 --chibs 2.00 --lx 50 --ly 200 --lz 5 --Nx 111 --Ny 451 --Nz 1 --dim 2 --small --phi 0.4 --salt "$salt"
-  # python3 ../../spice.py
-    #   cd ../
-    # done
+#   python3 ../../input.py --chips 1.00 --chibs 2.00 --lx 50 --ly 200 --lz 5 --Nx 111 --Ny 451 --Nz 1 --dim 2 --small --phi 0.4 --salt "$salt"
+#   python3 ../../spice.py
+#       cd ../
+#     done
 # cd ../
 
 
