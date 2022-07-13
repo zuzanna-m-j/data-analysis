@@ -157,7 +157,7 @@ if args.scramble == True:
     seq = ''.join(seq_l)
 
     with open("seq.data", 'w') as f:
-        f.wrtitelines(seq)
+        f.writelines(seq)
 
 if args.sequence == True:
     with open("../seq.data", 'r') as f:
