@@ -30,10 +30,10 @@ import argparse
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--wlc', action='store_true')
 parser.add_argument('--small', action='store_true')
 parser.add_argument('--sparse', action='store_true')
 parser.add_argument('--polar', action='store_true')
+parser.add_argument('--bipolar', action='store_true')
 parser.add_argument('--skip_solv', action='store_true')
 parser.add_argument('--bmon', action='store_true')
 parser.add_argument('--spice', action='store_true')
@@ -67,7 +67,7 @@ parser.add_argument('--binary_freq', default = 20000, type = int)
 parser.add_argument('--traj_freq', default = 500000, type = int)
 
 parser.add_argument('--midpush', default= 0.0, type = float)
-
+parser.add_argument('--wlc', default= 0.0, type = float)
 parser.add_argument('--scd', default= 0.0, type = float)
 
 
@@ -119,6 +119,9 @@ else:
     ANI = [6,-1, 0]
     CI =  [7, 1, 0]
     D =   [8, 1, 0]
+
+if args.bipolar == True:
+     B =   [2, 0, 1]
 
 types = [A,B,C,W,CAT,ANI,CI,D]
 particle_types = len(types)
@@ -214,7 +217,7 @@ for i in range(particle_types-1):
             Aij[i][j] = CHI[i][j]/rho0 + 2.0 * aii
             g_count += 1
 
-if args.wlc == True:
+if args.wlc != 0.0:
     angle_types = 1
 else:
     angle_types = 0
@@ -501,7 +504,7 @@ if SKIP_SOLV == False:
         mol_count += 1
 
 
-if args.wlc == True:
+if args.wlc != 0:
     #process angles
     for mol in mol_angles:
         for i in range(len(mol)-2):
@@ -512,7 +515,7 @@ with open("head.data", 'w') as fout:
     fout.writelines("Madatory string --> First rule of programing: if it works then don't touch it!\n\n")
     fout.writelines(f'{atom_count - 1} atoms\n')
     fout.writelines(f'{bond_count - 1} bonds\n')
-    if args.wlc == True:
+    if args.wlc != 0.0:
         fout.writelines(f'{angle_count - 1} angles\n')
     else:
         fout.writelines(f'{0} angles\n')
@@ -546,7 +549,7 @@ with open('tail.data', 'w') as fout:
     fout.writelines('\n')
     for line in bonds:
         fout.writelines(f"{line[0]} {line[1]}  {line[2]} {line[3]}\n")
-    if args.wlc == True:
+    if args.wlc != 0.0:
         fout.writelines('\n')
         fout.writelines('Angles\n')
         fout.writelines('\n')
@@ -607,8 +610,8 @@ extraforce polyc midpush {MIDPUSH}
 
 """
 
-if args.wlc == True:
-    input_file += f"""angle 1 wlc {1.0:7f}
+if args.wlc != 0.0:
+    input_file += f"""angle 1 wlc {args.wlc:7f}
     """
 
 input_file += f"\nn_gaussians {g_count}\n"
@@ -695,6 +698,7 @@ Polymer volume fraction: {N * n_pol/(n_pol * N + n_sol + n_ci + n_salt)}
 
 Scramble: {SCRAMBLE}
 SCD: {scd_val}
+BIPOLAR: {args.bipolar}
 -------------------------------------------------------------------------
 
 

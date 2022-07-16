@@ -12,22 +12,63 @@ cp /home/jello/Downloads/cuda-bd-master/research/data-analysis/stitch-eq.py stit
 cp /home/jello/Downloads/cuda-bd-master/research/data-analysis/spice-up.py spice.py
 cp /home/jello/Downloads/cuda-bd-master/research/data-analysis/write-data.bash write.bash
 
-mkdir polar
-cd polar
+mkdir polar-b
+cd polar-b
 
-  python3 ../input.py --chips 1.0 --chibs 0.00 --lx 50 --ly 200 --lz 5 --Nx 111 --Ny 451 --Nz 1 --dim 2 --small --phi 0.4 --polar --scramble --max_step 7500001 --traj_freq 500000 --midpush 0.05
-  python3 ../stitch.py
-
+  ../input.py --chips 1.00 --chibs 2.00 --lx 50 --ly 200 --lz 5 --Nx 111 --Ny 451 --Nz 1 --dim 2 --small --midpush 0.05 --polar --max_step 750001 --log_freq 1000 --traj_freq 10000 --phi 0.4 --bmon  --wlc 1.00 --bipolar
+  ../stitch.py
+  # ../stitch.py --atoms traj.lammpstrj
   ~/Downloads/cuda-tild/gpu-tild
 
-  for chi in 0.00 0.05 0.10 0.25 0.50 0.75 1.00 1.25 1.50 2.00; do
+  #for chi in 0.00 0.25 0.50 0.75 1.00 1.25 1.50 2.00 3.00; do
+  for chi in 0.25 0.50 1.00 1.50 2.00; do
+  rm -r "$chi"
   mkdir "$chi"
   cd "$chi"
-  python3 ../../input.py --chips "$chi" --chibs 0.00 --lx 50 --ly 200 --lz 5 --Nx 111 --Ny 451 --Nz 1 --dim 2 --small --phi 0.4 --polar
-  python3 ../../stitch.py --atoms ../traj.lammpstrj
-    cd ../
-    done
+  ../../input.py --chips 1.00 --chibs "$chi" --lx 50 --ly 200 --lz 5 --Nx 111 --Ny 451 --Nz 1 --dim 2 --small --polar --bmon --phi 0.4 --bipolar --wlc "$chi"
+  ../../stitch.py --atoms ../traj.lammpstrj
+  #~/Downloads/cuda-tild/gpu-tild
+  cd ../
+  done
 cd ../
+
+
+mkdir non-polar-b
+cd non-polar-b
+
+  ../input.py --chips 1.00 --chibs 2.00 --lx 50 --ly 200 --lz 5 --Nx 111 --Ny 451 --Nz 1 --dim 2 --small --midpush 0.05 --polar --max_step 750001 --log_freq 1000 --traj_freq 10000 --phi 0.4 --bmon  --wlc 1.00
+  ../stitch.py
+  # ../stitch.py --atoms traj.lammpstrj
+  ~/Downloads/cuda-tild/gpu-tild
+
+  #for chi in 0.00 0.25 0.50 0.75 1.00 1.25 1.50 2.00 3.00; do
+  for chi in 0.25 0.50 1.00 1.50 2.00; do
+  rm -r "$chi"
+  mkdir "$chi"
+  cd "$chi"
+  ../../input.py --chips 1.00 --chibs 2.00 --lx 50 --ly 200 --lz 5 --Nx 111 --Ny 451 --Nz 1 --dim 2 --small --polar --bmon --phi 0.4 --wlc "$chi"
+  ../../stitch.py --atoms ../traj.lammpstrj
+  #~/Downloads/cuda-tild/gpu-tild
+  cd ../
+  done
+cd ../
+
+# mkdir polar
+# cd polar
+
+#   # python3 ../input.py --chips 1.0 --chibs 0.00 --lx 50 --ly 200 --lz 5 --Nx 111 --Ny 451 --Nz 1 --dim 2 --small --phi 0.4 --polar --scramble --max_step 7500001 --traj_freq 500000 --midpush 0.05
+#   # python3 ../stitch.py
+
+#   # ~/Downloads/cuda-tild/gpu-tild
+
+#   for chi in 0.00 0.05 0.10 0.25 0.50 0.75 1.00 1.25 1.50 2.00; do
+#   mkdir "$chi"
+#   cd "$chi"
+#   python3 ../../input.py --chips "$chi" --chibs 0.00 --lx 50 --ly 200 --lz 5 --Nx 111 --Ny 451 --Nz 1 --dim 2 --small --phi 0.4 --polar
+#   python3 ../../stitch.py --atoms ../positions.lammpstrj
+#     cd ../
+#     done
+# cd ../
 
 
 # cd polar
@@ -61,8 +102,8 @@ cd ../
 # cd ../
 
 
-# mkdir non-polar
-# cd non-polar
+# mkdir polar
+# cd polar
 
 #   python3 ../input.py --chips 1.50 --chibs 2.00 --lx 50 --ly 200 --lz 5 --Nx 111 --Ny 451 --Nz 1 --dim 2 --small --midpush 0.05 --max_step 750001 --log_freq 5000 --traj_freq 50000 --phi 0.4
 #   python3 ../stitch.py
@@ -134,7 +175,7 @@ cd ../
   #~/Downloads/cuda-tild/gpu-tild
   # cd ../
   # done
-cd ../
+# cd ../
 
 
 #
@@ -230,23 +271,7 @@ cd ../
 
 # echo $'\n\n' >> info.txt
 
-# mkdir polar
-# cd polar
 
-#   ../input.py --chips 1.00 --chibs 2.00 --lx 50 --ly 200 --lz 5 --Nx 111 --Ny 451 --Nz 1 --dim 2 --small --midpush 0.05 --polar --max_step 450001 --log_freq 1000 --traj_freq 10000 --phi 0.4 --bmon
-#   ../stitch.py
-#   # ../stitch.py --atoms traj.lammpstrj
-#   ~/Downloads/cuda-tild/gpu-tild
-
-#   for chi in 0.00 0.25 0.50 0.75 1.00 1.25 1.50 2.00 3.00; do
-#   mkdir "$chi"
-#   cd "$chi"
-#   ../../input.py --chips 1.50 --chibs "$chi" --lx 50 --ly 200 --lz 5 --Nx 111 --Ny 451 --Nz 1 --dim 2 --small --polar --bmon --phi 0.4
-#   ../../stitch.py --atoms ../traj.lammpstrj
-#   #~/Downloads/cuda-tild/gpu-tild
-#   cd ../
-#   done
-# cd ../
 
 # mkdir non-polar
 # cd non-polar

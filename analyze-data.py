@@ -3,6 +3,7 @@
 from ast import arg
 import glob
 import os
+from re import I
 import numpy as np
 from celluloid import Camera
 import matplotlib.pyplot as plt
@@ -18,6 +19,9 @@ import matplotlib.colors
 import sys
 import matplotlib.ticker as mtick
 import argparse
+
+import numpy as np
+from scipy.optimize import curve_fit
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--chi', default = "chips")
@@ -37,7 +41,7 @@ elif args.chi == "salt":
 dim = args.dim
 
 # colors = list(mcolors.CSS4_COLORS)[10::3]
-colors2 = ['orangered','teal', 'dodgerblue', 'gold', 'forestgreen', 'darkred', 'darkorchid', 'darkorange', 'cornflowerblue', 'darkgreen', 'crimson', 'peru', 'olivedrab']
+colors2 = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple','tab:brown', 'tab:pink', 'tab:gray', 'tab:olive', 'tab:cyan']
 
 #rootdir = '/home/jello/results/AB-block-21-Jun-2022/non-polar'
 
@@ -106,7 +110,8 @@ for dir in dirs:
     files = glob.glob(f'{dir}*.tec')
     files.sort()
 
-    file = files[-1]
+    files = files[-10:]
+    file = files[0]
     print(f"\n\nAnalyzing: {file}")
 
     rho1_clusters = []
@@ -129,14 +134,30 @@ for dir in dirs:
         xdata = f[:,0]
         ydata = f[:,1]
 
-        rhoA = f[:,2]
-        rhoB = f[:,3]
-        rhoC = f[:,4]
+        rhoA = f[:,2]/len(files)
+        rhoB = f[:,3]/len(files)
+        rhoC = f[:,4]/len(files)
 
-        rhoW = f[:,5]
-        rhoCAT = f[:,6]
-        rhoANI = f[:,7]
-        rhoCI = f[:,8]
+        rhoW = f[:,5]/len(files)
+        rhoCAT = f[:,6]/len(files)
+        rhoANI = f[:,7]/len(files)
+        rhoCI = f[:,8]/len(files)
+
+
+        for data_file in files[1:]:
+
+            f = np.loadtxt(data_file,skiprows = 3)
+
+
+            rhoA += f[:,2]/len(files)
+            rhoB += f[:,3]/len(files)
+            rhoC += f[:,4]/len(files)
+
+            rhoW += f[:,5]/len(files)
+            rhoCAT += f[:,6]/len(files)
+            rhoANI += f[:,7]/len(files)
+            rhoCI += f[:,8]/len(files)
+
 
         data = [xdata,ydata,rhoA,rhoB,rhoC,rhoW,rhoCAT,rhoANI,rhoCI]
 
@@ -1111,6 +1132,52 @@ if dim == 3:
 
 if dim == 2:
 
+    def fit1(x,cs,cp,squiggle,l0):
+        return cs + (cp - cs) * 1/2 * (np.tanh((x-l0)/squiggle) + 1)
+
+    def fit2(x,cs,cp,squiggle,l0):
+        return cs + (cp - cs) * 1/2 * (np.tanh((-x+l0)/squiggle) + 1)
+
+    fig, ax = plt.subplots()
+    plt.suptitle(f"Polymer Density Profile - Fitted - {polarity}")
+
+
+
+    for i in range(len(DENS_PROF)):
+        y1 = yslices[:len(DENS_PROF[i])//2]
+        vals1 = DENS_PROF[i][:len(DENS_PROF[i])//2]
+        cs = vals1[25]
+        cp = max(vals1)
+        squiggle = 1.0
+        l0 = 50
+        popt1, pcov1 = curve_fit(fit1, y1,vals1, p0 = [cs,cp, squiggle, l0])
+
+        y2 = yslices[len(DENS_PROF[i])//2:]
+        vals2 = DENS_PROF[i][len(DENS_PROF[i])//2:]
+        cs = vals2[-25]
+        cp = max(vals2)
+        squiggle = 1.0
+        l0 = 160
+        popt2, pcov2 = curve_fit(fit2, y2,vals2, p0 = [cs,cp, squiggle, l0])
+
+        cp = (popt1[1] + popt2[1])/2
+
+        # ax.plot(y1,vals1,marker = '.', linestyle = "None", alpha = 0.5, color = colors2[i])
+        ax.plot(y1,fit1(y1,popt1[0], cp, *popt1[2:]),color = colors2[i], label = f'{chi_name}: {CHI_PS[i]}')
+
+        # ax.plot(y2,vals2,marker = '.', linestyle = "None", alpha = 0.2, color = colors2[i])
+        ax.plot(y2,fit2(y2,popt2[0], cp, *popt2[2:]),color = colors2[i])
+
+        print(cs, cp ,popt1, popt2)
+
+    ax.legend(loc = 'best')
+    ax.set_ylabel(r"$\rho_{ion}$")
+    ax.set_xlabel("y")
+    plt.tight_layout()
+    fig.savefig(f"FIT_{polarity}.png", dpi = 300)
+    plt.close()
+
+
     # i_AC_rich = np.array(i_AC_rich)
     # i_B_rich = np.array(i_B_rich)
     # i_solv = np.array(i_solv)
@@ -1144,14 +1211,21 @@ if dim == 2:
     SOL_POL_DENS = []
     SOL_ION_DENS = []
 
-    ordinate = np.mean(yslices.reshape(-1, 11), axis=1)
+    ordinate = yslices
+    # ordinate = np.mean(yslices.reshape(-1, 11), axis=1)
+
     fig, ax = plt.subplots()
     plt.suptitle(f"Polymer Density Profile ({polarity})")
     for i in range(len(DENS_PROF)):
 
-        vals = np.mean(DENS_PROF[i].reshape(-1, 11), axis=1)
-        ivals = np.mean(ION_DENS_PROF[i].reshape(-1, 11), axis=1)
-        wvals = np.mean(WATER_DENS_PROF[i].reshape(-1, 11), axis=1)
+        # vals = np.mean(DENS_PROF[i].reshape(-1, 11), axis=1)
+        # ivals = np.mean(ION_DENS_PROF[i].reshape(-1, 11), axis=1)
+        # wvals = np.mean(WATER_DENS_PROF[i].reshape(-1, 11), axis=1)
+
+        vals = DENS_PROF[i]
+        ivals = ION_DENS_PROF[i]
+        wvals = WATER_DENS_PROF[i]
+
         thr_high = np.argwhere(vals > 0.3)
         thr_low = np.argwhere(vals <= 0.3)
 
@@ -1171,11 +1245,12 @@ if dim == 2:
     plt.tight_layout()
     fig.savefig(f"Polymer_Density_Profile_{polarity}.png", dpi = 300)
 
-    ordinate = np.mean(yslices.reshape(-1, 11), axis=1)
+
     fig, ax = plt.subplots()
     plt.suptitle(f"Ion Density Profile ({polarity})")
     for i in range(len(ION_DENS_PROF)):
-        vals = np.mean(ION_DENS_PROF[i].reshape(-1, 11), axis=1)
+        # vals = np.mean(ION_DENS_PROF[i].reshape(-1, 11), axis=1)
+        vals = ION_DENS_PROF[i]
         ax.plot(ordinate,vals,label = f'{chi_name}: {CHI_PS[i]}', marker = '.', linewidth = 1.0)
     ax.legend(loc = 'best')
     ax.set_ylabel(r"$\rho_{ion}$")
@@ -1184,11 +1259,11 @@ if dim == 2:
     fig.savefig(f"Ion_Density_Profile_{polarity}.png", dpi = 300)
     plt.close()
 
-    ordinate = np.mean(yslices.reshape(-1, 11), axis=1)
     fig, ax = plt.subplots()
     plt.suptitle(f"Water Density Profile ({polarity})")
     for i in range(len(WATER_DENS_PROF)):
-        vals = np.mean(WATER_DENS_PROF[i].reshape(-1, 11), axis=1)
+        # vals = np.mean(WATER_DENS_PROF[i].reshape(-1, 11), axis=1)
+        vals = WATER_DENS_PROF[i]
         ax.plot(ordinate,vals,label = f'{chi_name}: {CHI_PS[i]}', marker = '.', linewidth = 1.0)
     ax.legend(loc = 'best')
     ax.set_ylabel(r"$\rho_{ion}$")
@@ -1197,12 +1272,12 @@ if dim == 2:
     fig.savefig(f"Water_Density_Profile_{polarity}.png", dpi = 300)
     plt.close()
 
-    ordinate = np.mean(yslices.reshape(-1, 11), axis=1)
     fig, ax = plt.subplots()
     camera = Camera(fig)
     plt.suptitle(f"Ion Density Profile ({polarity})")
     for i in range(len(ION_DENS_PROF)):
-        vals = np.mean(ION_DENS_PROF[i].reshape(-1, 11), axis=1)
+        #vals = np.mean(ION_DENS_PROF[i].reshape(-1, 11), axis=1)
+        vals = ION_DENS_PROF[i]
         ax.plot(ordinate,vals,label = f'{chi_name}: {CHI_PS[i]}', marker = '.', linewidth = 1.0)
         camera.snap()
     ax.legend(loc = 'best')
@@ -1264,3 +1339,6 @@ if dim == 2:
     ax.legend(loc = 'best')
     fig.savefig(f"Water_Density_Clust_{polarity}.png", dpi = 300)
     plt.close()
+
+
+
