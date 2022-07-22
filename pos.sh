@@ -10,6 +10,7 @@ while getopts 'vf' OPTION; do
       numdirs=${#numdirs[@]}
       if [ $numdirs == 0 ]
       then
+
       # /home/jello/results/dump-particle-posits positions.bin positions.lammpstrj
       /home/jello/Downloads/ovito-basic-3.7.4-x86_64/bin/ovito positions.lammpstrj
       cd ../
@@ -40,7 +41,8 @@ while getopts 'vf' OPTION; do
       numdirs=${#numdirs[@]}
       if [ $numdirs == 0 ]
       then
-      /home/jello/results/dump-particle-posits positions.bin positions.lammpstrj
+      /home/jello/Downloads/cuda-bd-master/research/data-analysis/get-lines.py
+      /home/jello/results/dump-particle-posits positions.bin positions.lammpstrj $(cat skip_that)
       /home/jello/Downloads/ovito-basic-3.7.4-x86_64/bin/ovito positions.lammpstrj
       cd ../
 
@@ -48,7 +50,8 @@ while getopts 'vf' OPTION; do
       for k in */
       do
         cd $k
-      /home/jello/results/dump-particle-posits positions.bin positions.lammpstrj
+      /home/jello/Downloads/cuda-bd-master/research/data-analysis/get-lines.py
+      /home/jello/results/dump-particle-posits positions.bin positions.lammpstrj $(cat skip_that)
       /home/jello/Downloads/ovito-basic-3.7.4-x86_64/bin/ovito positions.lammpstrj
         cd ../
       done

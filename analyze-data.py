@@ -26,7 +26,9 @@ from scipy.optimize import curve_fit
 parser = argparse.ArgumentParser()
 parser.add_argument('--chi', default = "chips")
 parser.add_argument('--dim', default = 3, type=int)
-parser.add_argument('-N', type = int)
+parser.add_argument('-a', type = int, default=0)
+parser.add_argument('-b', type = int, default=0)
+parser.add_argument('-c', type = int, default=0)
 
 
 args = parser.parse_args()
@@ -37,6 +39,10 @@ elif args.chi == "chibs":
     chi_name = r"$\chi_{BS}$"
 elif args.chi == "salt":
     chi_name = "salt ratio"
+elif args.chi == "wlc":
+    chi_name = "wlc"
+elif args.chi == "bipolar":
+    chi_name = r"$\alpha_{b}$"
 
 dim = args.dim
 
@@ -74,12 +80,15 @@ ION_DENS_PROF = []
 WATER_DENS_PROF = [] 
 
 AC_CL_DENS = []
+A_CL_DENS = []
 B_CL_DENS = []
 
 W_AC = []
+W_A = []
 W_B = []
 
 I_AC = []
+I_A = []
 I_B = []
 
 
@@ -196,12 +205,13 @@ for dir in dirs:
     # 2D data processing
 
     if dim == 2:
-
-        N = args.N
-        R_g = np.sqrt((N-1) * 1.0**2/6)
+        b = 1.0
+        N = args.a + args.b + args.c
+        R_g = np.sqrt( (N-1) * (b**2)/6 )
 
         CHI_PS.append(chi_ps)
 
+        rhoA__ = []
         rhoAC_ = []
         rhoB_ = []
         rhoIon_ = []
@@ -211,6 +221,7 @@ for dir in dirs:
         y = data[1]
         z = data[2]
 
+        rhoA_ = data[2]
         rhoAC = data[2] + data[4]
         rhoB = data[3]
         rhoW = data[5]
@@ -219,11 +230,13 @@ for dir in dirs:
         for xslice in xslices:
             for i in range(len(x)):
                 if x[i] == xslice:
+                    rhoA__.append(rhoA[i])
                     rhoAC_.append(rhoAC[i])
                     rhoB_.append(rhoB[i])
                     rhoIon_.append(rhoIon[i])
                     rhoW_.append(rhoW[i])
 
+        rhoAdata = np.array(rhoA_)
         rhoACdata = np.array(rhoAC_)
         rhoBdata = np.array(rhoB_)
         rhoIondata = np.array(rhoIon_)
@@ -233,9 +246,13 @@ for dir in dirs:
         # meanB = rhoBdata.mean()
         # meanIon = rhoIondata.mean()
 
+        rhoAdata *= (R_g**2/N)
         rhoACdata *= (R_g**2/N)
         rhoBdata *= (R_g**2/N)
-        # rhoIondata *= (R_g**2/N)
+
+        ion_norm = (args.a + args.c)/N * int(3 * 0.4)
+
+        rhoIondata /= ion_norm
 
         meanAC = rhoACdata.mean()
         meanB = rhoBdata.mean()
@@ -272,13 +289,28 @@ for dir in dirs:
         WATER_DENS_PROF.append(W_dens)
 
         ac_dens = []
+        a_dens = []
         b_dens = []
 
         w_ac = []
+        w_a = []
         w_b = []
 
         i_ac = []
+        i_a = []
         i_b = []
+
+
+        A_thr = []
+        for i in range(len(rhoACdata)):
+            if rhoAdata[i] < 0.075:
+                A_thr.append(0)
+            else:
+                A_thr.append(1)
+                a_dens.append(rhoAdata[i])
+                w_a.append(rhoWdata[i])
+                i_a.append(rhoIondata[i])
+        A_thr = np.array(A_thr)
 
         AC_thr = []
         for i in range(len(rhoACdata)):
@@ -310,12 +342,15 @@ for dir in dirs:
 
 
         AC_CL_DENS.append(np.average(ac_dens))
+        A_CL_DENS.append(np.average(a_dens))
         B_CL_DENS.append(np.average(b_dens))
 
         W_AC.append(np.average(w_ac))
+        W_A.append(np.average(w_a))
         W_B.append(np.average(w_b))
 
         I_AC.append(np.average(i_ac))
+        I_A.append(np.average(i_a))
         I_B.append(np.average(i_b))
 
         
@@ -1132,6 +1167,10 @@ if dim == 3:
 
 if dim == 2:
 
+
+    max_rho = []
+    chi_rho = []
+
     def fit1(x,cs,cp,squiggle,l0):
         return cs + (cp - cs) * 1/2 * (np.tanh((x-l0)/squiggle) + 1)
 
@@ -1140,42 +1179,78 @@ if dim == 2:
 
     fig, ax = plt.subplots()
     plt.suptitle(f"Polymer Density Profile - Fitted - {polarity}")
-
-
+    ax.set_xlabel('y')
+    ax.set_ylabel(r"$<C^{*}>$")
 
     for i in range(len(DENS_PROF)):
-        y1 = yslices[:len(DENS_PROF[i])//2]
-        vals1 = DENS_PROF[i][:len(DENS_PROF[i])//2]
-        cs = vals1[25]
-        cp = max(vals1)
-        squiggle = 1.0
-        l0 = 50
-        popt1, pcov1 = curve_fit(fit1, y1,vals1, p0 = [cs,cp, squiggle, l0])
+        try:
+            y1 = yslices[:len(DENS_PROF[i])//2]
+            vals1 = DENS_PROF[i][:len(DENS_PROF[i])//2]
+            cs = vals1[25]
+            cp = max(vals1)
+            squiggle = 1.0
+            l0 = 50
+            popt1, pcov1 = curve_fit(fit1, y1,vals1, p0 = [cs,cp, squiggle, l0])
 
-        y2 = yslices[len(DENS_PROF[i])//2:]
-        vals2 = DENS_PROF[i][len(DENS_PROF[i])//2:]
-        cs = vals2[-25]
-        cp = max(vals2)
-        squiggle = 1.0
-        l0 = 160
-        popt2, pcov2 = curve_fit(fit2, y2,vals2, p0 = [cs,cp, squiggle, l0])
+            y2 = yslices[len(DENS_PROF[i])//2:]
+            vals2 = DENS_PROF[i][len(DENS_PROF[i])//2:]
+            cs = vals2[-25]
+            cp = max(vals2)
+            squiggle = 1.0
+            l0 = 160
+            popt2, pcov2 = curve_fit(fit2, y2,vals2, p0 = [cs,cp, squiggle, l0])
 
-        cp = (popt1[1] + popt2[1])/2
+            cp = (popt1[1] + popt2[1])/2
 
-        # ax.plot(y1,vals1,marker = '.', linestyle = "None", alpha = 0.5, color = colors2[i])
-        ax.plot(y1,fit1(y1,popt1[0], cp, *popt1[2:]),color = colors2[i], label = f'{chi_name}: {CHI_PS[i]}')
+            # ax.plot(y1,vals1,marker = '.', linestyle = "None", alpha = 0.5, color = colors2[i])
+            ax.plot(y1,fit1(y1,popt1[0], cp, *popt1[2:]),color = colors2[i], label = f'{chi_name}: {CHI_PS[i]}')
 
-        # ax.plot(y2,vals2,marker = '.', linestyle = "None", alpha = 0.2, color = colors2[i])
-        ax.plot(y2,fit2(y2,popt2[0], cp, *popt2[2:]),color = colors2[i])
+            # ax.plot(y2,vals2,marker = '.', linestyle = "None", alpha = 0.2, color = colors2[i])
+            ax.plot(y2,fit2(y2,popt2[0], cp, *popt2[2:]),color = colors2[i])
+            max_rho.append(max(fit1(y1,popt1[0], cp, *popt1[2:])))
+            chi_rho.append(CHI_PS[i])
 
-        print(cs, cp ,popt1, popt2)
+        except:
+            print(f"Error: failed on {CHI_PS[i]}!\n")
+
+    with open('fit.data','w') as f:
+        f.writelines(f"peak_rho = {str(max_rho)}\n")
+        f.writelines(f"chi_vals = {str(chi_rho)}\n")
+
 
     ax.legend(loc = 'best')
-    ax.set_ylabel(r"$\rho_{ion}$")
-    ax.set_xlabel("y")
     plt.tight_layout()
-    fig.savefig(f"FIT_{polarity}.png", dpi = 300)
+    fig.savefig(f"FIT_POL_{polarity}.png", dpi = 300)
     plt.close()
+
+    # for i in range(len(ION_DENS_PROF)):
+    #     try:
+    #         y1 = yslices[:len(ION_DENS_PROF[i])//2]
+    #         vals1 = ION_DENS_PROF[i][:len(ION_DENS_PROF[i])//2]
+    #         cs = vals1[25]
+    #         cp = max(vals1)
+    #         squiggle = 1.0
+    #         l0 = 50
+    #         popt1, pcov1 = curve_fit(fit1, y1,vals1, p0 = [cs,cp, squiggle, l0])
+
+    #         y2 = yslices[len(ION_DENS_PROF[i])//2:]
+    #         vals2 = ION_DENS_PROF[i][len(ION_DENS_PROF[i])//2:]
+    #         cs = vals2[-25]
+    #         cp = max(vals2)
+    #         squiggle = 1.0
+    #         l0 = 160
+    #         popt2, pcov2 = curve_fit(fit2, y2,vals2, p0 = [cs,cp, squiggle, l0])
+
+    #         cp = (popt1[1] + popt2[1])/2
+
+    #         # ax.plot(y1,vals1,marker = '.', linestyle = "None", alpha = 0.5, color = colors2[i])
+    #         ax.plot(y1,fit1(y1,popt1[0], cp, *popt1[2:]),color = colors2[i], label = f'{chi_name}: {CHI_PS[i]}')
+
+    #         # ax.plot(y2,vals2,marker = '.', linestyle = "None", alpha = 0.2, color = colors2[i])
+    #         ax.plot(y2,fit2(y2,popt2[0], cp, *popt2[2:]),color = colors2[i])
+    #     except:
+    #         print(f"Error: failed on {CHI_PS[i]}!\n")
+
 
 
     # i_AC_rich = np.array(i_AC_rich)
@@ -1312,9 +1387,10 @@ if dim == 2:
     plt.suptitle(f"Ion density - {polarity}")
     ax.set_ylabel(f"{chi_name}")
     ax.set_xlabel(r"$<\rho_{ion}>$")
-    ax.plot(CL_ION_DENS,CHI_PS, color = 'tab:red', linestyle = 'None', marker = 'o', label = 'slab')
+    ax.plot(CL_ION_DENS,CHI_PS, color = 'tab:green', linestyle = 'None', marker = 'o', label = 'slab')
     ax.plot(SOL_ION_DENS,CHI_PS, color = 'tab:blue', linestyle = 'None', marker = 'd', label = 'solvent')
-    ax.plot(I_AC,CHI_PS, color = 'tab:green', linestyle = 'None', marker = 'H', label = 'A&C')
+    ax.plot(I_AC,CHI_PS, color = 'tab:red', linestyle = 'None', marker = 'H', label = 'A&C')
+    # ax.plot(I_A,CHI_PS, color = 'tab:blue', linestyle = 'None', marker = 'D', label = 'A')
     ax.plot(I_B,CHI_PS, color = 'tab:purple', linestyle = 'None', marker = 'X', label = 'B')
     ax.legend(loc = 'best')
     fig.savefig(f"Ion_Density_Clust_{polarity}.png", dpi = 300)
@@ -1324,8 +1400,10 @@ if dim == 2:
     plt.suptitle(f"Monomer density - {polarity}")
     ax.set_ylabel(f"{chi_name}")
     ax.set_xlabel(r"$<C^{*}>$")
-    ax.plot(AC_CL_DENS,CHI_PS, color = 'tab:red', linestyle = 'None', marker = 'o', label = 'A&C')
-    ax.plot(B_CL_DENS,CHI_PS, color = 'tab:purple', linestyle = 'None', marker = 'd', label = 'B')
+    ax.plot(CL_POL_DENS,CHI_PS, color = "tab:green", linestyle = 'None', marker = 'o', label = 'slab')
+    ax.plot(A_CL_DENS,CHI_PS, color = 'tab:blue', linestyle = 'None', marker = 'H', label = 'A')
+    ax.plot(AC_CL_DENS,CHI_PS, color = 'tab:red', linestyle = 'None', marker = 'D', label = 'A&C')
+    ax.plot(B_CL_DENS,CHI_PS, color = 'tab:purple', linestyle = 'None', marker = 'X', label = 'B')
     ax.legend(loc = 'best')
     fig.savefig(f"Mon_Density_Clust_{polarity}.png", dpi = 300)
     plt.close()
@@ -1334,11 +1412,23 @@ if dim == 2:
     plt.suptitle(f"Water density - {polarity}")
     ax.set_ylabel(f"{chi_name}")
     ax.set_xlabel(r"$<C^{*}>$")
+    ax.plot(W_A,CHI_PS, color = 'tab:blue', linestyle = 'None', marker = 'o', label = 'A')
     ax.plot(W_AC,CHI_PS, color = 'tab:red', linestyle = 'None', marker = 'o', label = 'A&C')
     ax.plot(W_B,CHI_PS, color = 'tab:purple', linestyle = 'None', marker = 'd', label = 'B')
     ax.legend(loc = 'best')
     fig.savefig(f"Water_Density_Clust_{polarity}.png", dpi = 300)
     plt.close()
+
+    with open('concentrations.data', 'w') as f:
+        f.writelines(f'AC_conc = {str(AC_CL_DENS)}\n')
+        f.writelines(f'A_conc = {str(A_CL_DENS)}\n')
+        f.writelines(f'B_conc = {str(B_CL_DENS)}\n')
+        f.writelines(f'IAC_conc = {str(I_AC)}\n')
+        f.writelines(f'IA_conc = {str(I_A)}\n')
+        f.writelines(f'IB_conc = {str(I_B)}\n')
+        f.writelines(f'WAC_conc = {str(W_AC)}\n')
+        f.writelines(f'WA_conc = {str(W_A)}\n')
+        f.writelines(f'WB_conc = {str(W_B)}\n')
 
 
 
