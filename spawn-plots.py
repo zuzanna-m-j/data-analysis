@@ -31,22 +31,22 @@ prefix = 'results'
 
 # should I average ???
 
-N_vals = [51, 75]
+N_vals = [24, 51, 75]
 
-chi_ac = [0.75, 0.50]
+chi_ac = [1.00, 0.75, 0.50]
 
-chi_b = [1.5,  1.25]
+chi_b = [2.5, 1.5,  1.25]
 
 fig, ax = plt.subplots(2,1)
 plt.suptitle(r"Shift in critical $\chi^{*}$")
 ax[0].set_ylabel(r"$\chi_{AC-S}^{*}$")
-ax[0].plot(N_vals, chi_ac, marker = 'o', label = r"AB")
+ax[0].plot(N_vals, chi_ac, marker = 'o', label = r"AB", color = 'tab:red')
 ax[0].legend(loc = 'best')
 
 
 ax[1].set_ylabel(r"$\chi_{B-S}^{*}$")
 ax[1].set_xlabel("N (chain length)")
-ax[1].plot(N_vals, chi_b, marker = 'o', label = r"ABC, $\chi_{AC-S}^{*}$")
+ax[1].plot(N_vals, chi_b, marker = 'o', label = r"ABC, $\chi_{AC-S}^{*}$", color = 'tab:green')
 ax[1].legend(loc = 'best')
 
 plt.tight_layout()
@@ -263,4 +263,28 @@ ax.plot(peak_rho_150_p, chi_vals_150_np, marker = 'o',label = r"$\chi = 1.50$ - 
 
 ax.legend(loc = 'best')
 fig.savefig(f"{prefix}/peaks-polymer-ac-salt", dpi = 300)
+plt.close()
+
+
+
+# non -polar just b
+
+peak_rho_p = [0.19935527346931536, 0.2144687808560551, 0.25396249354360045, 0.28942295125871786, 0.2796320401833037, 0.33271359651341426, 0.3818278265589809, 0.4096337159680875]
+chi_vals_p = [0.25, 0.5, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0]
+
+# polar just b
+
+peak_rho_np = [0.22114972322198073, 0.24134532481301219, 0.2647915275001765, 0.2871747974481928, 0.3044526175758024, 0.33652474123100007, 0.364622772438144]
+chi_vals_np = [0.25, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0]
+
+fig, ax = plt.subplots()
+plt.suptitle(r"Peak polymer concentration - B, N = 75")
+ax.set_ylabel(r"$\chi_{B-S}$")
+ax.set_xlabel(r"$<C^{*}>$")
+
+ax.plot(peak_rho_np, chi_vals_np, marker = 'o', label = r"B - non-polar")
+ax.plot(peak_rho_p, chi_vals_p, marker = 'o', label = r"B - polar")
+
+ax.legend(loc = 'best')
+fig.savefig(f"{prefix}/peaks-B", dpi = 300)
 plt.close()
