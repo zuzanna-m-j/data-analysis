@@ -23,9 +23,7 @@ import argparse
 import numpy as np
 from scipy.optimize import curve_fit
 
-
-
-
+prefix = 'results'
 
 # with open('data_file.data', 'r') as f:
 #     data = f.readlines()
@@ -52,9 +50,8 @@ ax[1].plot(N_vals, chi_b, marker = 'o', label = r"ABC, $\chi_{AC-S}^{*}$")
 ax[1].legend(loc = 'best')
 
 plt.tight_layout()
-plt.show()
-# fig.savefig(f"Shift-in-critical-Chi-avg", dpi = 300)
-# plt.close()
+fig.savefig(f"{prefix}/Shift-in-critical-chi", dpi = 300)
+plt.close()
 
 
 
@@ -121,7 +118,7 @@ WA_conc = [1.1963310580769573, 1.2048051664817507, 1.2018268802697811, 1.2013601
 
 
 fig, ax = plt.subplots()
-plt.suptitle(r"Ion concentration")
+plt.suptitle(r"Ion concentration - AC")
 
 ax.plot(AC_conc_np, IAC_conc_np, marker = 'o', label = r"AC-non-polar")
 ax.plot(AC_conc_p, IAC_conc_p, marker = 'o', label = r"AC-polar")
@@ -131,12 +128,13 @@ ax.plot(AC_conc_sc, IAC_conc_sc, marker = 'o', label = r"AC-polar-scrambled")
 ax.set_ylabel(r"$<\rho_{ion}>$")
 ax.set_xlabel(r"$<C^{*}>$")
 ax.legend(loc = 'best')
-plt.show()
+fig.savefig(f"{prefix}/ion-concentration-ac", dpi = 300)
+plt.close()
 
 
 
 fig, ax = plt.subplots()
-plt.suptitle(r"Ion concentration")
+plt.suptitle(r"Ion concentration - B")
 
 
 ax.plot(B_conc_50, IB_conc_50, marker = 'o', label = r"B50")
@@ -145,7 +143,8 @@ ax.plot(B_conc_75, IB_conc_75, marker = 'o', label = r"B75")
 ax.set_ylabel(r"$<\rho_{ion}>$")
 ax.set_xlabel(r"$<C^{*}>$")
 ax.legend(loc = 'best')
-plt.show()
+fig.savefig(f"{prefix}/ion-concentration-b", dpi = 300)
+plt.close()
 
 # 74
 peak_rho_74 = [0.27483157046311063, 0.30029684597626366, 0.32557053552224285, 0.3560026021623351, 0.3933853099399682, 0.4216475983095163]
@@ -180,7 +179,8 @@ ax.plot(peak_rho_50_np, chi_vals_50_np, marker = 'o', label = r"AC-N50-non-polar
 ax.plot(peak_rho_sc, chi_vals_sc, marker = 'o', label = r"AC-N50-scrambled-polar")
 
 ax.legend(loc = 'best')
-plt.show()
+fig.savefig(f"{prefix}/peaks-polymer-ac", dpi = 300)
+plt.close()
 
 
 # ABC - chibs - polar
@@ -219,7 +219,8 @@ ax.plot(peak_rho_sc_np, chi_vals_sc_np, marker = 'o', label = r"ABC - scrambled 
 # a and c are kept polar
 
 ax.legend(loc = 'best')
-plt.show()
+fig.savefig(f"{prefix}/peaks-polymer-abc", dpi = 300)
+plt.close()
 
 
 
@@ -250,7 +251,7 @@ chi_vals_150_np = [0.005, 0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3]
 
 
 fig, ax = plt.subplots()
-plt.suptitle(r"Peak polymer concentration - AB - salt")
+plt.suptitle(r"Peak polymer concentration - AC - salt")
 ax.set_ylabel(r"$\chi_{AC-S}$")
 ax.set_xlabel(r"$<C^{*}>$")
 
@@ -261,4 +262,5 @@ ax.plot(peak_rho_150_np, chi_vals_150_np, marker = 'o', label = r"$\chi = 1.50$ 
 ax.plot(peak_rho_150_p, chi_vals_150_np, marker = 'o',label = r"$\chi = 1.50$ - polar")
 
 ax.legend(loc = 'best')
-plt.show()
+fig.savefig(f"{prefix}/peaks-polymer-ac-salt", dpi = 300)
+plt.close()
