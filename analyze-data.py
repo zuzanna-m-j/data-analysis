@@ -211,7 +211,7 @@ for dir in dirs:
 
         CHI_PS.append(chi_ps)
 
-        rhoA__ = []
+        rhoA_ = []
         rhoAC_ = []
         rhoB_ = []
         rhoIon_ = []
@@ -221,7 +221,7 @@ for dir in dirs:
         y = data[1]
         z = data[2]
 
-        rhoA_ = data[2]
+        rhoA = data[2]
         rhoAC = data[2] + data[4]
         rhoB = data[3]
         rhoW = data[5]
@@ -230,7 +230,7 @@ for dir in dirs:
         for xslice in xslices:
             for i in range(len(x)):
                 if x[i] == xslice:
-                    rhoA__.append(rhoA[i])
+                    rhoA_.append(rhoA[i])
                     rhoAC_.append(rhoAC[i])
                     rhoB_.append(rhoB[i])
                     rhoIon_.append(rhoIon[i])
