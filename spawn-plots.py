@@ -25,6 +25,8 @@ from scipy.optimize import curve_fit
 
 
 
+
+
 # with open('data_file.data', 'r') as f:
 #     data = f.readlines()
 
