@@ -3,35 +3,56 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-
-# gratings.py
-
-x = np.arange(-10, 11.5, 0.5)
-
+x = np.linspace(0,41,41)
 X, Y = np.meshgrid(x, x)
+L = 5
+w = 2*np.pi/L
 
+print(f"L = {L}")
+print(f"Omega = {w}, {w * (2*np.pi)}")
 
-angle = 0
-l = 5
-w = 2 * np.pi/l
-grating = np.sin(w * X )
-print(w * np.pi)
-
+grating = np.sin(w * X)
 plt.set_cmap("gray")
-
 plt.subplot(121)
 plt.imshow(grating)
 
-# Calculate Fourier transform of grating
 ft = np.fft.ifftshift(grating)
 ft = np.fft.fft2(ft)
 ft = np.fft.fftshift(ft)
+ft = abs(ft)
 
 plt.subplot(122)
-plt.imshow(abs(ft))
-# plt.xlim([480, 520])
-# plt.ylim([520, 480])  # Note, order is reversed for y
+plt.imshow(ft)
+plt.xlim([369//2 - 20, 369//2 + 20])  # Note, order is reversed for y
+plt.ylim([369//2 + 20, 369//2 - 20])  # Note, order is reversed for y
+print(f"{369//2 + 1}")
 plt.show()
+
+X = np.zeros_like(X)
+Y = np.zeros_like(X)
+Z = np.zeros_like(X)
+
+for r in range(len(ft)):
+    for c in range(len(ft[r])):
+        X[r,c] = c
+        Y[r,c] = r
+        Z[r,c] = ft[r,c]
+
+fig = plt.figure()
+ax = plt.axes(projection='3d')
+ax.plot_surface(X, Y, Z)
+ax.set_xlabel('x')
+ax.set_ylabel('y')
+ax.set_zlabel('z')
+plt.show()
+
+# mask = np.argwhere((ft.real) != 0)
+# ft = abs(ft)
+# print(mask)
+# for c in mask:
+#     ar = ft[c]
+#     print(f"{ar[0] - (369//2 + 1)}, {ar[1] - (369//2 + 1)}")
+
 
 # from skimage.draw import rectangle, disk
 # img = np.zeros((8, 10), dtype=np.uint8)

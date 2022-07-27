@@ -31,11 +31,11 @@ prefix = 'results'
 
 # should I average ???
 
-N_vals = [24, 51, 75]
+N_vals = [24, 50, 75, 100]
 
-chi_ac = [1.00, 0.75, 0.50]
+chi_ac = [1.00, 0.75, 0.50, 0.30]
 
-chi_b = [2.5, 1.5,  1.25]
+chi_b = [2.25, 2.25,  2.25, 2.25]
 
 fig, ax = plt.subplots(2,1)
 plt.suptitle(r"Shift in critical $\chi^{*}$")
@@ -134,16 +134,16 @@ plt.close()
 
 
 fig, ax = plt.subplots()
-plt.suptitle(r"Ion concentration - B")
+plt.suptitle(r"Ion concentration in B")
 
 
-ax.plot(B_conc_50, IB_conc_50, marker = 'o', label = r"B50")
-ax.plot(B_conc_75, IB_conc_75, marker = 'o', label = r"B75")
+ax.plot(B_conc_50, IB_conc_50, marker = 'o', label = r"ABC - 50")
+ax.plot(B_conc_75, IB_conc_75, marker = 'o', label = r"ABC - 75")
 
 ax.set_ylabel(r"$<\rho_{ion}>$")
 ax.set_xlabel(r"$<C^{*}>$")
 ax.legend(loc = 'best')
-fig.savefig(f"{prefix}/ion-concentration-b", dpi = 300)
+fig.savefig(f"{prefix}/ion concentration in B", dpi = 300)
 plt.close()
 
 # 74
@@ -288,3 +288,43 @@ ax.plot(peak_rho_p, chi_vals_p, marker = 'o', label = r"B - polar")
 ax.legend(loc = 'best')
 fig.savefig(f"{prefix}/peaks-B", dpi = 300)
 plt.close()
+
+
+#3d - ac n = 50 polar
+
+peak_rho = [0.22835688695811984, 0.25286578741216714, 0.29855004541645225, 0.34975496268294304, 0.40345853398803266, 0.43837551989172263, 0.4653420885059072, 0.49582735335018846, 0.5217667239864295]
+chi_vals = [0.0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0]
+
+
+AC_conc = [0.28679456440456685, 0.305068568419953, 0.33454578429969994, 0.37037972193852653, 0.411497168026731, 0.44034680609456833, 0.4633631350413918, 0.49078671677289565, 0.5160306899251424]
+A_conc = [0.16783740793522978, 0.17672918198351728, 0.1901733641131612, 0.20622343386960978, 0.22411255243845682, 0.23694554424199757, 0.24691548973770527, 0.25897911470525486, 0.26979984991526446]
+IAC_conc = [0.8208851461112543, 0.8026265466451385, 0.7733525620544014, 0.7392482736192061, 0.6827213511957412, 0.6428337484644066, 0.6160769425713793, 0.5882905366349702, 0.5551232270428832]
+IA_conc = [0.8272432381965373, 0.807124146225348, 0.7779476051456756, 0.7419443445730993, 0.6840863126238053, 0.6437800345110715, 0.6169357076117922, 0.5886406880781164, 0.5558506354212587]
+
+
+fig, ax = plt.subplots()
+plt.suptitle(r"Peak polymer concentration - AC, N = 50, 3D")
+ax.set_ylabel(r"$\chi_{AC-S}$")
+ax.set_xlabel(r"$<C^{*}>$")
+
+ax.plot(peak_rho, chi_vals, marker = 'o', label = r"polar")
+
+ax.legend(loc = 'best')
+fig.savefig(f"{prefix}/3d-AC-peaks", dpi = 300)
+plt.close()
+
+
+fig, ax = plt.subplots()
+plt.suptitle(r"Ion concentration - AC - 3d")
+
+ax.plot(AC_conc, IAC_conc, marker = 'o', label = r"polar")
+ax.set_ylabel(r"$<\rho_{ion}>$")
+ax.set_xlabel(r"$<C^{*}>$")
+ax.legend(loc = 'best')
+fig.savefig(f"{prefix}/ion-concentration-ac-3d", dpi = 300)
+plt.close()
+
+
+
+peak_rho_p = [0.22413822668441946, 0.24460676799914816, 0.26836978022619723, 0.29105553661708833, 0.30856684224480585, 0.34107237334182955, 0.3695501072081297]
+chi_vals_p = [0.24999999999999978, 0.9999999999999998, 1.2500000000000002, 1.5, 1.9999999999999996, 2.5000000000000004, 3.0]

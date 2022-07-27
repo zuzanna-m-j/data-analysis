@@ -54,7 +54,7 @@ parser.add_argument('--chipi', default = 0.0, type = float)
 parser.add_argument('--chibs', default = 0.0, type = float)
 parser.add_argument('--phi', default = 0.1, type = float)
 
-parser.add_argument('--bipolar', default= 0.0, type = float)
+parser.add_argument('--bipolar', default = 0.0, type = float)
 
 parser.add_argument('--lx', default = 20.0, type = float)
 parser.add_argument('--ly', default = 20.0, type = float)
